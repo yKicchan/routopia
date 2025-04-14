@@ -1,11 +1,19 @@
 {
   "name": "routype",
+  "description": "Friendly and fully typed route definition library.",
   "version": "1.0.0",
-  "description": "",
   "main": "./cjs/index.js",
   "module": "./esm/index.js",
   "types": "./esm/index.d.ts",
   "files": ["dist", "src"],
+  "homepage": "https://github.com/yKicchan/routype",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yKicchan/routype.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yKicchan/routype/issues"
+  },
   "scripts": {
     "build": "pnpm build:cjs && pnpm build:esm",
     "build:cjs": "tsc -p tsconfig.cjs.json",
@@ -15,8 +23,8 @@
     "check": "tsc --noEmit && biome check",
     "fix": "tsc --noEmit && biome check --write"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["route", "typed", "typescript", "path", "type-safe"],
+  "author": "yKicchan",
   "license": "MIT",
   "packageManager": "pnpm@10.7.1",
   "dependencies": {
