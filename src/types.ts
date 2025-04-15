@@ -1,17 +1,17 @@
 type Nullable<T> = T | undefined;
 
 /**
- * サポートする HTTP メソッド
+ * Supported HTTP methods
  */
 type HttpMethod = "get" | "post" | "put" | "delete";
 
 /**
- * パスパラメータのスキーマ型
+ * Schema type for path parameters
  */
 type SchemaParams = Record<string, string | number>;
 
 /**
- * クエリパラメータのスキーマ型
+ * Schema type of query parameters (non-object values only)
  */
 type SchemaQueries = Record<
   string,
@@ -19,12 +19,12 @@ type SchemaQueries = Record<
 >;
 
 /**
- * エンドポイント URL 構築に必要なパラメータの基礎型
+ * Schema type for URL construction parameters
  */
 export type Options = { params?: SchemaParams; queries?: SchemaQueries; hash?: string };
 
 /**
- * エンドポイント文字列からパスパラメータを抽出し、それらをキーとするオブジェクト型を生成するユーティリティ型
+ * Utility type that extracts path parameters from an endpoint string and generates object types with those as keys
  *
  * @example
  * ExtractParams<"/users/[userId]/posts/[postId]">
@@ -35,7 +35,7 @@ type ExtractParams<Endpoint extends string> = Endpoint extends `${string}[${infe
   : unknown;
 
 /**
- * エンドポイント文字列からパスパラメータが存在するかを判定するユーティリティ型
+ * Utility type to determine if a path parameter exists from an endpoint string
  *
  * @example
  * HasParams<"/users/[id]">
@@ -47,10 +47,10 @@ type ExtractParams<Endpoint extends string> = Endpoint extends `${string}[${infe
 type HasParams<Endpoint extends string> = keyof ExtractParams<Endpoint> extends never ? false : true;
 
 /**
- * エンドポイント文字列に基づいて、メソッドが期待する引数の型を定義するヘルパー型。
- * - エンドポイントにパスパラメータ (`[param]`) が含まれる場合: `params` プロパティが必須
- * - エンドポイントにパスパラメータが含まれない場合: `params` プロパティは許可されない
- * - `queries` は常にオプショナル。
+ * Utility type that defines the type of arguments the method expects, based on the endpoint string.
+ * - If the endpoint contains a path parameter (`[param]`): the `params` property is required
+ * - If the endpoint does not contain a path parameter: the `params` property is not allowed
+ * - `queries` are always optional.
  *
  * @example
  * ExpectedOptions<"/users/[id]">
@@ -64,7 +64,7 @@ type ExpectedOptions<Endpoint extends string> = HasParams<Endpoint> extends true
   : { params?: never; queries?: SchemaQueries; hash?: string };
 
 /**
- * Nullable なプロパティのみを抽出するユーティリティ型
+ * Utility type to extract only nullable properties
  *
  * @example
  * PickNullable<{ required: string; optional?: string }>
@@ -75,7 +75,7 @@ type PickNullable<T> = {
 };
 
 /**
- * Required なプロパティのみを抽出するユーティリティ型
+ * Utility type to extract only Required properties
  *
  * @example
  * PickRequired<{ required: string; optional?: string }>
@@ -86,7 +86,7 @@ type PickRequired<T> = {
 };
 
 /**
- * 必須プロパティがあるかを再帰的に判定するユーティリティ型
+ * Utility type that recursively determines if a required property is present
  *
  * @example
  * HasRequired<{ required: { optional?: string } }>
@@ -111,7 +111,7 @@ type HasRequired<T> = (
   : true;
 
 /**
- * Nullable なプロパティを省略可能に(?を付与)するユーティリティ型
+ * Utility type that makes Nullable properties optional by adding `?` (optional modifier).
  *
  * @example
  * Optional<{ required: string; optional: Nullable<string> }>
@@ -124,7 +124,7 @@ type Optional<T> = {
 };
 
 /**
- * スキーマ定義から実際の用途に合わせて必須のキーが再帰的になければ省略可能にするユーティリティ型
+ * Converts schema definition into optional keys if it has no required fields
  *
  * @example
  * ActualOptions<{ queries: { search?: string; count?: number  } }>
@@ -145,7 +145,7 @@ type ActualOptions<Schema extends Options> = Omit<
 };
 
 /**
- * パスパラメータを適応した型に変換するユーティリティ型
+ * Replace [param] in path with actual values
  *
  * @example
  * ReplacePathParams<"/users/[userId]/posts/[postId]", { userId: "123"; postId: "456" }>
@@ -161,7 +161,7 @@ type ReplacePathParams<
   : Path;
 
 /**
- * パスパラメータの有無に応じて型を変換するユーティリティ型
+ * Applies path parameters if they exist
  *
  * @example
  * ApplyParams<"/users/[userId]", { userId: 123 }>
@@ -177,7 +177,7 @@ type ApplyParams<Path extends string, Params extends Nullable<ExtractParams<Path
     : Path;
 
 /**
- * クエリパラメータの有無に応じて型を変換するユーティリティ型
+ * Applies query parameters if they exist
  *
  * @example
  * ApplyQueries<"/", { required: string }>
@@ -195,10 +195,20 @@ type ApplyQueries<Path extends string, Queries extends Nullable<SchemaQueries>> 
     ? `${Path}${HasRequired<Queries> extends true ? "?" : ""}${string}`
     : Path;
 
+/**
+ * Applies hash fragment if defined
+ *
+ * @example
+ * ApplyHash<"/path", "hash">
+ * // "/path#hash"
+ *
+ * ApplyHash<"/path">
+ * // "/path"
+ */
 type ApplyHash<Path extends string, Hash extends Nullable<string>> = Hash extends string ? `${Path}#${Hash}` : Path;
 
 /**
- * パスパラメータとクエリパラメータから期待する URL 型を特定するユーティリティ型
+ * Combines path, queries, and hash into a fully typed URL string
  *
  * @example
  * ExtractPath<"/users/[userId]", { userId: 123 }, { search: string }>
@@ -212,8 +222,8 @@ type ExpectedPath<
 > = ApplyHash<ApplyQueries<ApplyParams<Path, Params>, Queries>, Hash>;
 
 /**
- * エンドポイント定義とスキーマ定義から実際の URL 返却型を生成するユーティリティ型
- * スキーマ定義のうち、パスパラメータとクエリパラメータの有無に応じて型を絞り込む
+ * Combines endpoint and schema definition to generate a concrete return type
+ * Refine type according to the presence or absence of path and query parameters in the schema definition
  *
  * @example
  * ActualReturn<"/path/[param]", { params: { param: string }, queries: { q: string } }>
@@ -233,13 +243,13 @@ type ActualReturn<Path extends string, Options> = ExpectedPath<
 >;
 
 /**
- * 引数なし定義用の型エイリアス
+ * Alias for methods with no parameters
  */
 export type Empty = Nullable<Record<string, never>>;
 
 /**
- * URL の構築に必要なパラメータを受け取り、URL を生成する関数の型
- * 定義したスキーマによって引数がどこまで省略可能かどうかを制御する
+ * Function type that returns a URL string based on the schema definition
+ * - Accepts parameters depending on whether required fields exist
  */
 type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = OptionsSchema extends Empty
   ? // メソッド定義が空の場合は引数なしにする
@@ -257,21 +267,27 @@ type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = Op
         ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
     : never;
 
+/**
+ * Expected schema definition:
+ * - Endpoint string as key
+ * - Object of HTTP methods as values
+ * - Each method can have its own schema definition
+ */
 export type ExpectedSchema<Schema> = {
-  // エンドポイントは文字列のみ許容
   [EndpointKey in keyof Schema]: EndpointKey extends string
     ? {
-        // Key: HTTP メソッドは get, post, put, delete から選択
-        // Value: パスパラメータが params の定義と一致しなければ型エラーになり、queries は自由に定義可能
         [MethodKey in HttpMethod]?: ExpectedOptions<EndpointKey>;
       }
     : never;
 };
 
+/**
+ * Actual schema returned from the function:
+ * - Each method is replaced with a typed URL generator
+ */
 export type ActualSchema<Schema, BaseUrl extends string> = {
   [EndpointKey in keyof Schema]: EndpointKey extends string
     ? {
-        // スキーマのうちメソッド定義の中身を URL 生成関数に置き換えるので型を矯正する
         [MethodKey in keyof Schema[EndpointKey]]: Method<BaseUrl, EndpointKey, Schema[EndpointKey][MethodKey]>;
       }
     : never;

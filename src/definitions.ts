@@ -3,27 +3,27 @@ import type { ActualSchema, Empty, ExpectedSchema, Options } from "./types";
 import { replacePathParams } from "./utilities";
 
 /**
- * エンドポイントのパラメータの型定義に利用するユーティリティ
+ * Utility used to define parameter types in parameter schemas
  * @example
- * { id: schema.type as string }
+ * { id: type as string }
  */
 export const type: unknown = undefined;
 
 /**
- * エンドポイントの各種メソッド(get, post, put, delete)にパラメータが不要な場合に利用するユーティリティ
+ * Utility used when no parameters are required for an endpoint method
  * @example
- * { get: schema.empty }
+ * { get: empty }
  */
 export const empty: Empty = undefined;
 
 /**
- * エンドポイントに必要なパラメータを受け取り URL を生成する実装を返す高階関数
- * @param endpoint エンドポイントのパス
- * @param baseUrl ベース URL
+ * Higher-order function that returns a URL generator for an endpoint, given its parameters
+ * @param endpoint - The endpoint path, which can include path parameters (e.g., "/users/[id]")
+ * @param baseUrl - The base URL to prepend to the generated URL (optional)
  * @example
- * const getUsersUrl = method("/users/[id]");
- * const url = getUsersUrl({ params: { id: "1" }, queries: { flag: true } });
- * console.log(url); // => "/users/1?flag=true"
+ * const getUrl = method("/users/[id]", "https://example.com/api");
+ * getUrl({ params: { id: "1" }, queries: { flag: true } });
+ * // => "https://example.com/api/users/1?flag=true"
  */
 function method(endpoint: string, baseUrl = "") {
   return (options?: Options) => {
@@ -35,39 +35,71 @@ function method(endpoint: string, baseUrl = "") {
 }
 
 /**
- * エンドポイント定義（スキーマ）を受け取り、型安全な URL 生成関数群を含むオブジェクトを生成する
- * 定義段階から URL Path Parameter を自動で補完したり、利用時には型チェックによる渡し忘れなどを防ぐ
+ * Takes a routes schema and returns an object with type-safe URL generators
+ * Provides autocomplete for URL path parameters during definition, and type checking at usage
  *
- * @param schema スキーマ
- * @returns エンドポイントとそのメソッドに対応する URL 生成関数を持つオブジェクト
+ * @param schema - Routes schema, which can include path parameters (e.g., "/users/[id]") and method definitions (e.g., { get: { params: { id: type as string } } })
+ * @returns An object with type-safe URL generators for each route and method
  * @example
- * const routes = schema.routes({
- *   // /users エンドポイントの定義例
+ * import { routes, type, empty } from "routype";
+ *
+ * const routes = routes({
+ *   // Example for the /users route
  *   "/users": {
  *     get: {
- *       // クエリパラメータの定義
+ *       // Define query parameters
  *       queries: {
- *         ids: schema.type as string[],
- *         search: schema.type as string,
- *         count: schema.type as number,
- *         flag: schema.type as boolean,
- *         nullable: schema.type as Nullable<string>,
- *       }
+ *         required: type as string,
+ *         optional: type as string | undefined,
+ *       },
  *     },
- *     // パラメータが不要な場合
- *     post: schema.empty
+ *     // No parameters needed
+ *     post: empty
  *   },
  *   "/users/[id]": {
  *     get: {
- *       // パスパラメータの定義
+ *       // Define path parameters
  *       params: {
- *         id: schema.type as string,
+ *         id: type as string,
  *       },
  *     },
  *   },
  * });
  */
 export function routes<Schema extends ExpectedSchema<Schema>>(schema: Schema): ActualSchema<Schema, "">;
+/**
+ * Takes a base URL and a routes schema, and returns an object with type-safe URL generators
+ * Provides autocomplete for URL path parameters during definition, and type checking at usage
+ *
+ * @param baseUrl - The base URL to prepend to the generated URLs
+ * @param schema - Routes schema, which can include path parameters (e.g., "/users/[id]") and method definitions (e.g., { get: { params: { id: type as string } } })
+ * @returns An object with type-safe URL generators for each route and method
+ * @example
+ * import { routes, type, empty } from "routype";
+ *
+ * const routes = routes("https://example.com/api", {
+ *   // Example for the /users route
+ *   "/users": {
+ *     get: {
+ *       // Define query parameters
+ *       queries: {
+ *         required: type as string,
+ *         optional: type as string | undefined,
+ *       },
+ *     },
+ *     // No parameters needed
+ *     post: empty,
+ *   },
+ *   "/users/[id]": {
+ *     get: {
+ *       // Define path parameters
+ *       params: {
+ *         id: type as string,
+ *       },
+ *     },
+ *   },
+ * });
+ */
 export function routes<BaseUrl extends string, Schema extends ExpectedSchema<Schema>>(
   baseUrl: BaseUrl,
   schema: Schema,
@@ -85,7 +117,6 @@ export function routes<Schema extends ExpectedSchema<Schema>, BaseUrl extends st
         [endpoint]: Object.keys(methods).reduce(
           (acc, methodKey) =>
             Object.assign(acc, {
-              // 定義したスキーマのうちメソッド定義の中身を URL 生成関数に置き換える
               [methodKey]: method(endpoint, baseUrl),
             }),
           {},
