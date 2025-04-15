@@ -225,22 +225,19 @@ describe("routes", () => {
 
   it("baseUrl がついた URL を生成できること", () => {
     const baseUrl = "https://example.com/api";
-    const routes = schema.routes(
-      {
-        "/path/[param]": {
-          get: {
-            params: {
-              param: schema.type as string,
-            },
-            queries: {
-              q: schema.type as string,
-            },
-            hash: schema.type as string,
+    const routes = schema.routes(baseUrl, {
+      "/path/[param]": {
+        get: {
+          params: {
+            param: schema.type as string,
           },
+          queries: {
+            q: schema.type as string,
+          },
+          hash: schema.type as string,
         },
       },
-      baseUrl,
-    );
+    });
     const expectedParams = { param: "1" };
     const expectedQueries = { q: "query" };
     const expectedHash = "hash";

@@ -68,14 +68,17 @@ function method(endpoint: string, baseUrl = "") {
  * });
  */
 export function routes<Schema extends ExpectedSchema<Schema>>(schema: Schema): ActualSchema<Schema, "">;
-export function routes<Schema extends ExpectedSchema<Schema>, BaseUrl extends string>(
-  schema: Schema,
+export function routes<BaseUrl extends string, Schema extends ExpectedSchema<Schema>>(
   baseUrl: BaseUrl,
+  schema: Schema,
 ): ActualSchema<Schema, BaseUrl>;
 export function routes<Schema extends ExpectedSchema<Schema>, BaseUrl extends string>(
-  schema: Schema,
-  baseUrl?: BaseUrl,
+  ...args: [Schema] | [BaseUrl, Schema]
 ) {
+  const hasBaseUrl = args.length === 2;
+  const baseUrl = hasBaseUrl ? args[0] : "";
+  const schema = hasBaseUrl ? args[1] : args[0];
+
   return Object.entries<object>(schema).reduce(
     (acc, [endpoint, methods]) =>
       Object.assign(acc, {
