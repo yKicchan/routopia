@@ -1,12 +1,14 @@
 {
   "name": "routype",
   "description": "Friendly and fully typed route definition library.",
-  "version": "1.0.0",
-  "main": "./cjs/index.js",
-  "module": "./esm/index.js",
-  "types": "./esm/index.d.ts",
-  "files": ["dist", "src"],
-  "homepage": "https://github.com/yKicchan/routype",
+  "version": "0.1.0",
+  "author": "yKicchan",
+  "license": "MIT",
+  "files": ["dist", "package.json", "README.md", "LICENSE.md"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "homepage": "https://github.com/yKicchan/routype#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yKicchan/routype.git"
@@ -15,17 +17,15 @@
     "url": "https://github.com/yKicchan/routype/issues"
   },
   "scripts": {
-    "build": "pnpm build:cjs && pnpm build:esm",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build:esm": "tsc -p tsconfig.esm.json",
+    "build": "rm -rf dist && pnpm build:esbuild && pnpm build:types",
+    "build:esbuild": "node ./esbuild.config.mjs",
+    "build:types": "tsc --declaration --emitDeclarationOnly --declarationDir './dist'",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "check": "tsc --noEmit && biome check",
     "fix": "tsc --noEmit && biome check --write"
   },
   "keywords": ["route", "typed", "typescript", "path", "type-safe"],
-  "author": "yKicchan",
-  "license": "MIT",
   "packageManager": "pnpm@10.7.1",
   "dependencies": {
     "query-string": "^9.1.1"
@@ -36,6 +36,7 @@
     "@commitlint/config-conventional": "^19.8.0",
     "@types/node": "^22.14.1",
     "@vitest/coverage-v8": "^3.1.1",
+    "esbuild": "^0.25.2",
     "husky": "^9.1.7",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"

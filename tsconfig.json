@@ -3,11 +3,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
-    "rootDir": "./src",
     "moduleResolution": "NodeNext",
-    "baseUrl": "./",
-    "sourceMap": true,
-    "outDir": "./dist",
     "noImplicitAny": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -16,5 +12,5 @@
     "types": ["vitest/globals"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["./dist", "./node_modules", "./coverage"]
+  "exclude": ["./dist", "./node_modules", "./coverage", "**/*.test.ts"]
 }
