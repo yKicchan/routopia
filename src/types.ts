@@ -6,16 +6,27 @@ type Nullable<T> = T | undefined;
 type HttpMethod = "get" | "post" | "put" | "delete";
 
 /**
+ * Schema type for path parameter
+ */
+type SchemaParam = string | number | readonly (string | number)[] | undefined;
+
+/**
  * Schema type for path parameters
  */
-type SchemaParams = Record<string, string | number>;
+type SchemaParams = Record<string, SchemaParam>;
 
 /**
  * Schema type of query parameters (non-object values only)
  */
 type SchemaQueries = Record<
   string,
-  boolean | number | string | null | bigint | undefined | (boolean | number | string | null | bigint | undefined)[]
+  | boolean
+  | number
+  | string
+  | null
+  | bigint
+  | undefined
+  | readonly (boolean | number | string | null | bigint | undefined)[]
 >;
 
 /**
@@ -29,10 +40,21 @@ export type Options = { params?: SchemaParams; queries?: SchemaQueries; hash?: s
  * @example
  * ExtractParams<"/users/[userId]/posts/[postId]">
  * // { userId: string | number, postId: string | number }
+ *
+ * ExtractParams<"/path/[...params]">
+ * // { params: (string | number)[] }
+ *
+ * ExtractParams<"/path/[[...params]]">
+ * // { params?: (string | number)[] }
  */
-type ExtractParams<Endpoint extends string> = Endpoint extends `${string}[${infer Param}]${infer After}`
-  ? { [K in Param]: string | number } & ExtractParams<After>
-  : unknown;
+type ExtractParams<Endpoint extends string> = Endpoint extends `${infer Before}[[...${infer Param}]]${infer After}`
+  ? { [K in Param]: Extract<SchemaParam, readonly unknown[] | undefined> } & ExtractParams<Before> &
+      ExtractParams<After>
+  : Endpoint extends `${infer Before}[...${infer Param}]${infer After}`
+    ? { [K in Param]: Extract<SchemaParam, readonly unknown[]> } & ExtractParams<Before> & ExtractParams<After>
+    : Endpoint extends `${string}[${infer Param}]${infer After}`
+      ? { [K in Param]: Extract<SchemaParam, string | number> } & ExtractParams<After>
+      : unknown;
 
 /**
  * Utility type to determine if a path parameter exists from an endpoint string
@@ -99,7 +121,7 @@ type PickRequired<T> = {
  * // false
  */
 type HasRequired<T> = (
-  T extends unknown[]
+  T extends readonly unknown[]
     ? false
     : T extends object
       ? keyof PickRequired<T> extends never
@@ -124,7 +146,19 @@ type Optional<T> = {
 };
 
 /**
- * Converts schema definition into optional keys if it has no required fields
+ * Utility type that makes all properties of an object readonly
+ *
+ * @example
+ * ReadonlyProperties<{ array: string[] }>
+ * // { readonly array: readonly string[] }
+ */
+type ReadonlyProperties<T> = {
+  [K in keyof T]: Readonly<T[K]>;
+};
+
+/**
+ * Converts schema definition into optional keys if it has no required fields.
+ * Readonly is marked to accept as const arguments.
  *
  * @example
  * ActualOptions<{ queries: { search?: string; count?: number  } }>
@@ -135,9 +169,9 @@ type Optional<T> = {
  */
 type ActualOptions<Schema extends Options> = Omit<
   {
-    [K in keyof Schema as HasRequired<Schema[K]> extends true ? K : never]: Optional<Schema[K]>;
+    [K in keyof Schema as HasRequired<Schema[K]> extends true ? K : never]: Optional<ReadonlyProperties<Schema[K]>>;
   } & {
-    [K in keyof Schema as HasRequired<Schema[K]> extends false ? K : never]?: Optional<Schema[K]>;
+    [K in keyof Schema as HasRequired<Schema[K]> extends false ? K : never]?: Optional<ReadonlyProperties<Schema[K]>>;
   },
   "hash"
 > & {
@@ -145,19 +179,79 @@ type ActualOptions<Schema extends Options> = Omit<
 };
 
 /**
+ * Utility type that joins an array of strings or numbers into a single string
+ *
+ * @example
+ * JoinParams<["123", "456"]>
+ * // "123/456"
+ */
+type JoinParams<T extends readonly unknown[], Acc extends string = ""> = T extends readonly [
+  infer Head extends Extract<SchemaParam, string | number>,
+  ...infer Tail extends readonly unknown[],
+]
+  ? Tail["length"] extends 0
+    ? Head
+    : `${Head}${Acc}/${JoinParams<Tail, Acc>}`
+  : `${Acc}${string}`;
+
+/**
+ * Utility type that trims double slashes and trailing slash from a path string
+ *
+ * @example
+ * TrimPath<"/path//to//resource/">
+ * // "/path/to/resource"
+ */
+type TrimPath<Path extends string> = Path extends `${infer Before}//${infer After}`
+  ? `${TrimPath<`${Before}/${After}`>}`
+  : Path extends `${infer Before}/`
+    ? `${Before}`
+    : Path;
+
+/**
  * Replace [param] in path with actual values
  *
  * @example
  * ReplacePathParams<"/users/[userId]/posts/[postId]", { userId: "123"; postId: "456" }>
  * // "/users/123/posts/456"
+ *
+ * ReplacePathParams<"/path/[...params]", { params: ["123", "456"] }>
+ * // "/path/123/456"
+ *
+ * ReplacePathParams<"/path/[[...params]]", { params: ["123", "456"] }>
+ * // "/path/123/456"
  */
 type ReplacePathParams<
   Path extends string,
   Params extends SchemaParams,
-> = Path extends `${infer Before}[${infer Param}]${infer After}`
+> = Path extends `${infer Before}[[...${infer Param}]]${infer After}`
   ? Param extends keyof Params
-    ? `${Before}${Params[Param]}${ReplacePathParams<After, Params>}`
-    : never
+    ? Params[Param] extends Extract<SchemaParam, readonly unknown[]>
+      ? `${ReplacePathParams<Before, Params>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params>}`
+      : never
+    : `${ReplacePathParams<Before, Params>}${ReplacePathParams<After, Params>}`
+  : Path extends `${infer Before}[...${infer Param}]${infer After}`
+    ? Param extends keyof Params
+      ? Params[Param] extends Extract<SchemaParam, readonly unknown[]>
+        ? `${ReplacePathParams<Before, Params>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params>}`
+        : never
+      : never
+    : Path extends `${infer Before}[${infer Param}]${infer After}`
+      ? Param extends keyof Params
+        ? Params[Param] extends Extract<SchemaParam, string | number>
+          ? `${Before}${Params[Param]}${ReplacePathParams<After, Params>}`
+          : never
+        : never
+      : Path;
+
+/**
+ * Utility type that removes optional catch-all parameters from the path
+ *
+ * @example
+ * OmitOptionalCatchAll<"/path/[[...params]]">
+ * // "/path/"
+ */
+type OmitOptionalCatchAll<Path extends string> = Path extends `${infer Before}[[...${string}]]${infer After}`
+  ? `${Before}${OmitOptionalCatchAll<After>}`
   : Path;
 
 /**
@@ -170,11 +264,13 @@ type ReplacePathParams<
  * ApplyParams<"/">
  * // "/"
  */
-type ApplyParams<Path extends string, Params extends Nullable<ExtractParams<Path>>> = keyof Params extends never
-  ? Path
-  : Params extends SchemaParams
-    ? ReplacePathParams<Path, Params>
-    : Path;
+type ApplyParams<Path extends string, Params extends Nullable<Optional<ExtractParams<Path>>>> = TrimPath<
+  keyof Params extends never
+    ? OmitOptionalCatchAll<Path>
+    : Params extends SchemaParams
+      ? ReplacePathParams<Path, Params>
+      : never
+>;
 
 /**
  * Applies query parameters if they exist
@@ -216,7 +312,7 @@ type ApplyHash<Path extends string, Hash extends Nullable<string>> = Hash extend
  */
 type ExpectedPath<
   Path extends string,
-  Params extends Nullable<ExtractParams<Path>> = undefined,
+  Params extends Nullable<Optional<ExtractParams<Path>>> = undefined,
   Queries extends Nullable<SchemaQueries> = undefined,
   Hash extends Nullable<string> = undefined,
 > = ApplyHash<ApplyQueries<ApplyParams<Path, Params>, Queries>, Hash>;
@@ -237,7 +333,7 @@ type ExpectedPath<
  */
 type ActualReturn<Path extends string, Options> = ExpectedPath<
   Path,
-  Options extends { params: infer Params extends ExtractParams<Path> } ? Params : undefined,
+  Options extends { params: infer Params extends Optional<ExtractParams<Path>> } ? Params : undefined,
   Options extends { queries?: infer Queries extends Nullable<SchemaQueries> } ? Queries : undefined,
   Options extends { hash: infer Hash extends string } ? Hash : undefined
 >;

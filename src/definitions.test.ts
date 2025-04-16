@@ -24,6 +24,20 @@ describe("routes", () => {
         },
       },
     },
+    "/params/[...params]": {
+      get: {
+        params: {
+          params: schema.type as string[],
+        },
+      },
+    },
+    "/params/[[...params]]": {
+      get: {
+        params: {
+          params: schema.type as string[] | undefined,
+        },
+      },
+    },
     "/queries/required": {
       get: {
         queries: {
@@ -167,6 +181,36 @@ describe("routes", () => {
       const url = routes["/params/[param1]/[param2]"].get({
         params: expectedParams,
       });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長なパスパラメータを指定して URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedUrl = `/params/${expectedParams.params.join("/")}`;
+
+      const url = routes["/params/[...params]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長でオプショナルなパスパラメータを指定して URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedUrl = `/params/${expectedParams.params.join("/")}`;
+
+      const url = routes["/params/[[...params]]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長なパスパラメータを省略して URL を生成できること", () => {
+      const expectedUrl = "/params";
+
+      const url = routes["/params/[[...params]]"].get();
 
       expect(url).toBe(expectedUrl);
     });
