@@ -2,7 +2,7 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 
 # routopia
 
-> Type-safe and friendly route path definitions
+> Type-safe URL builder based on your route definitions.
 
 ![routopia logo](./logo.png)
 

@@ -2,7 +2,7 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 
 # routopia
 
-> 型安全でフレンドリーなルートパス定義ライブラリ
+> ルート定義にもとづいて、型安全に URL を組み立てられるビルダーライブラリ
 
 ![routopia logo](./logo.png)
 
@@ -11,7 +11,7 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 - 🔒 型安全なルート定義とパス構築
 - 📦 軽量でフレームワーク非依存
 - 🥰 型推論と自動補完によるスムーズな開発体験
-- 🔧 SPA のルーティングや API エンドポイントの定義などに最適
+- 🔧 SPA のルーティングや API エンドポイントの定義に
 
 ## 🚀 Getting Started
 
