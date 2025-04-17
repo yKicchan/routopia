@@ -1,4 +1,4 @@
-import queryString from "query-string";
+import { stringify } from "query-string";
 import schema from ".";
 
 describe("routes", () => {
@@ -129,7 +129,7 @@ describe("routes", () => {
         boolean: true,
         array: ["string"],
       };
-      const expectedUrl = `${expectedPath}?${queryString.stringify(expectedQueries)}`;
+      const expectedUrl = `${expectedPath}?${stringify(expectedQueries)}`;
 
       const url = routes["/queries/required"].get({
         queries: expectedQueries,
@@ -144,7 +144,7 @@ describe("routes", () => {
         string: "string",
         number: 1,
       };
-      const expectedUrl = `${expectedPath}?${queryString.stringify(expectedQueries)}`;
+      const expectedUrl = `${expectedPath}?${stringify(expectedQueries)}`;
 
       const url = routes["/queries/both"].get({
         queries: expectedQueries,
@@ -270,7 +270,7 @@ describe("routes", () => {
       const expectedPath = `/all/${expectedParams.param}`;
       const expectedQueries = { optional: "optional" };
       const expectedHash = "hash";
-      const expectedUrl = `${expectedPath}?${queryString.stringify(expectedQueries)}#${expectedHash}`;
+      const expectedUrl = `${expectedPath}?${stringify(expectedQueries)}#${expectedHash}`;
 
       const url = routes["/all/[param]"].get({
         params: expectedParams,
@@ -311,7 +311,7 @@ describe("routes", () => {
     const expectedParams = { param: "1" };
     const expectedQueries = { q: "query" };
     const expectedHash = "hash";
-    const expectedUrl = `${baseUrl}/path/${expectedParams.param}?${queryString.stringify(expectedQueries)}#${expectedHash}`;
+    const expectedUrl = `${baseUrl}/path/${expectedParams.param}?${stringify(expectedQueries)}#${expectedHash}`;
 
     const url = routes["/path/[param]"].get({
       params: expectedParams,
