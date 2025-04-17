@@ -41,7 +41,7 @@ function method(endpoint: string, baseUrl = "") {
  * @param schema - Routes schema, which can include path parameters (e.g., "/users/[id]") and method definitions (e.g., { get: { params: { id: type as string } } })
  * @returns An object with type-safe URL generators for each route and method
  * @example
- * import { routes, type, empty } from "routype";
+ * import { routes, type, empty } from "routopia";
  *
  * const routes = routes({
  *   // Example for the /users route
@@ -75,7 +75,7 @@ export function routes<Schema extends ExpectedSchema<Schema>>(schema: Schema): A
  * @param schema - Routes schema, which can include path parameters (e.g., "/users/[id]") and method definitions (e.g., { get: { params: { id: type as string } } })
  * @returns An object with type-safe URL generators for each route and method
  * @example
- * import { routes, type, empty } from "routype";
+ * import { routes, type, empty } from "routopia";
  *
  * const routes = routes("https://example.com/api", {
  *   // Example for the /users route

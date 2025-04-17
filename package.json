@@ -1,5 +1,5 @@
 {
-  "name": "routype",
+  "name": "routopia",
   "description": "Friendly and fully typed route definition library.",
   "version": "0.1.0",
   "author": "yKicchan",
@@ -8,13 +8,13 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "homepage": "https://github.com/yKicchan/routype#readme",
+  "homepage": "https://github.com/yKicchan/routopia#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yKicchan/routype.git"
+    "url": "git+https://github.com/yKicchan/routopia.git"
   },
   "bugs": {
-    "url": "https://github.com/yKicchan/routype/issues"
+    "url": "https://github.com/yKicchan/routopia/issues"
   },
   "scripts": {
     "build": "rm -rf dist && pnpm build:esbuild && pnpm build:types",

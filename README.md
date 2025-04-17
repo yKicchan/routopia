@@ -1,10 +1,10 @@
 Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 
-# routype
+# routopia
 
 > Type-safe and friendly route path definitions
 
-![routype logo](./logo.png)
+![routopia logo](./logo.png)
 
 ## ✨ Features
 
@@ -18,27 +18,27 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 ### Install
 
 ```bash
-npm install routype
+npm install routopia
 ```
 
 ### Define Routes
 
 ```ts
-import * as routype from 'routype';
+import * as routopia from 'routopia';
 
-const myRoutes = routype.routes({
+const myRoutes = routopia.routes({
   "/users": {
     // No parameters
-    get: routype.empty,
+    get: routopia.empty,
   },
   "/path/[id]": {
     get: {
       params: {
-        id: routype.type as number,
+        id: routopia.type as number,
       },
       queries: {
         // Queries can be optional
-        q: routype.type as string | undefined,
+        q: routopia.type as string | undefined,
       },
     },
   },
@@ -64,11 +64,11 @@ myRoutes["/path/[id]"].get({ params: { id: 123 }, queries: { q: "query" } });
 ## 🌐 Include Base URL
 
 ```ts
-import * as routype from 'routype';
+import * as routopia from 'routopia';
 
-const myApiRoutes = routype.routes("https://api.example.com", {
+const myApiRoutes = routopia.routes("https://api.example.com", {
   "/users": {
-    get: routype.empty,
+    get: routopia.empty,
   }
 });
 
@@ -79,7 +79,7 @@ myApiRoutes["/users"].get();
 ### Best Practices
 
 ```ts
-import { routes, ExpectedSchema } from 'routype';
+import { routes, ExpectedSchema } from 'routopia';
 
 export function createMyApiRoutes<T extends ExpectedSchema<T>>(schema: T) {
   return routes("https://api.example.com", schema);
@@ -87,12 +87,12 @@ export function createMyApiRoutes<T extends ExpectedSchema<T>>(schema: T) {
 ```
 
 ```ts
-import * as routype from 'routype';
+import * as routopia from 'routopia';
 import { createMyApiRoutes } from './path/to/createMyApiRoutes';
 
 const usersApiRoutes = createMyApiRoutes({
   "/users": {
-    get: routype.empty,
+    get: routopia.empty,
   }
 });
 
@@ -100,17 +100,17 @@ usersApiRoutes["/users"].get();
 // => "https://api.example.com/users"
 ```
 
-## 📘 Why routype?
+## 📘 Why routopia?
 
-`routype` brings type-safe route definitions with full inference — including path and query parameters — with minimal code.  
+`routopia` brings type-safe route definitions with full inference — including path and query parameters — with minimal code.  
 Here’s what makes it special:
 
 - Autocompletion at the time of definition
 - Fuzzy access with path narrowing on usage
 - Advanced inference through template literal types
 
-`routype` focuses on declarative and minimal URL construction with strong type safety.  
-Unlike tools that generate routes from file systems or OpenAPI specs, `routype` emphasizes simplicity and control.  
+`routopia` focuses on declarative and minimal URL construction with strong type safety.  
+Unlike tools that generate routes from file systems or OpenAPI specs, `routopia` emphasizes simplicity and control.  
 It shines when:
 
 - You need a clean, typed way to define URLs (e.g., in Next.js API paths or SPA routing)
@@ -118,4 +118,4 @@ It shines when:
 - You want a fully typed and developer-friendly alternative with minimal setup
 
 For more complex use cases like route generation or regex support, another tool might suit you better.  
-But for handcrafted, reliable routes, `routype` has your back.
+But for handcrafted, reliable routes, `routopia` has your back.

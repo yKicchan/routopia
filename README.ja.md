@@ -1,10 +1,10 @@
 Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 
-# routype
+# routopia
 
 > 型安全でフレンドリーなルートパス定義ライブラリ
 
-![routype logo](./logo.png)
+![routopia logo](./logo.png)
 
 ## ✨ Features
 
@@ -18,27 +18,27 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 ### Install
 
 ```bash
-npm install routype
+npm install routopia
 ```
 
 ### Define Routes
 
 ```ts
-import * as routype from 'routype';
+import * as routopia from 'routopia';
 
-const myRoutes = routype.routes({
+const myRoutes = routopia.routes({
   "/users": {
     // パラメータなし
-    get: routype.empty,
+    get: routopia.empty,
   },
   "/path/[id]": {
     get: {
       params: {
-        id: routype.type as number,
+        id: routopia.type as number,
       },
       queries: {
         // クエリはオプショナル指定が可能
-        q: routype.type as string | undefined,
+        q: routopia.type as string | undefined,
       },
     },
   },
@@ -64,11 +64,11 @@ myRoutes["/path/[id]"].get({ params: { id: 123 }, queries: { q: "query" }  });
 ## 🌐 Include Base URL
 
 ```ts
-import * as routype from 'routype';
+import * as routopia from 'routopia';
 
-const myApiRoutes = routype.routes("https://api.example.com", {
+const myApiRoutes = routopia.routes("https://api.example.com", {
   "/users": {
-    get: routype.empty,
+    get: routopia.empty,
   }
 });
 
@@ -79,7 +79,7 @@ myApiRoutes["/users"].get();
 ### Best practice
 
 ```ts
-import { routes, ExpectedSchema } from 'routype';
+import { routes, ExpectedSchema } from 'routopia';
 
 export function createMyApiRoutes<T extends ExpectedSchema<T>>(schema: T) {
   return routes("https://api.example.com", schema);
@@ -87,12 +87,12 @@ export function createMyApiRoutes<T extends ExpectedSchema<T>>(schema: T) {
 ```
 
 ```ts
-import * as routype from 'routype';
+import * as routopia from 'routopia';
 import { createMyApiRoutes } from './path/to/createMyApiRoutes';
 
 const usersApiRoutes = createMyApiRoutes({
   "/users": {
-    get: routype.empty,
+    get: routopia.empty,
   }
 });
 
@@ -100,7 +100,7 @@ usersApiRoutes["/users"].get();
 // => "https://api.example.com/users"
 ```
 
-## 📘 Why routype?
+## 📘 Why routopia?
 
 強力な型推論と IDE のオートコンプリート機能により、パスパラメータ、クエリパラメータを含む型安全性を備えたルート定義を提供します。  
 他のライブラリとの主な違いは以下の通りです。
@@ -109,7 +109,7 @@ usersApiRoutes["/users"].get();
 - 利用時は曖昧検索のようにパスを絞り込める
 - テンプレートリテラル型により詳細な推論が得られる
 
-routype は宣言的で簡素な URL の型安全な取得に焦点を当てています。  
+routopia は宣言的で簡素な URL の型安全な取得に焦点を当てています。  
 より高機能な自動生成や正規表現などを欲する方は他のライブラリが良いでしょう。
 
-逆に Next.js の API パスや SPA のルーティング、何らかの事情で Open API generator のようなエコシステムを利用していない場合など、シンプルな URL 定義を必要とする場合は、 routype がマッチしているかもしれません。
+逆に Next.js の API パスや SPA のルーティング、何らかの事情で Open API generator のようなエコシステムを利用していない場合など、シンプルな URL 定義を必要とする場合は、 routopia がマッチしているかもしれません。
