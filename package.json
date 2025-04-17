@@ -23,7 +23,8 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "check": "tsc --noEmit && biome check",
-    "fix": "tsc --noEmit && biome check --write"
+    "fix": "tsc --noEmit && biome check --write",
+    "release": "scripts/release"
   },
   "keywords": ["route", "typed", "typescript", "path", "type-safe"],
   "packageManager": "pnpm@10.7.1",
