@@ -367,9 +367,7 @@ type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = Op
  */
 export type ExpectedSchema<Schema> = {
   [EndpointKey in keyof Schema]: EndpointKey extends string
-    ? {
-        [MethodKey in HttpMethod]?: ExpectedOptions<EndpointKey>;
-      }
+    ? Partial<Record<HttpMethod, ExpectedOptions<EndpointKey>>>
     : never;
 };
 
