@@ -1,2 +1,8 @@
-export { routes, type, empty } from "./definitions";
-export { ExpectedSchema, ActualSchema } from "./types";
+import { empty, routes, type } from "./definitions";
+export { ActualSchema, ExpectedSchema } from "./types";
+
+export default {
+  routes,
+  type,
+  empty,
+};

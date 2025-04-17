@@ -1,5 +1,5 @@
 import queryString from "query-string";
-import * as schema from "./definitions";
+import schema from ".";
 
 describe("routes", () => {
   const routes = schema.routes({
