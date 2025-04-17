@@ -1,7 +1,7 @@
 {
   "name": "routopia",
   "description": "Type-safe URL builder based on your route definitions.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "yKicchan",
   "license": "MIT",
   "files": ["dist", "package.json", "README.md", "LICENSE.md"],
