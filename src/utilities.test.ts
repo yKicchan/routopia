@@ -22,6 +22,16 @@ describe("replacePathParams", () => {
       expect(result).toBe(expectedPath);
     });
 
+    it("パラメータがエンコードされること", () => {
+      const path = "/path/[param]";
+      const params = { param: "1 2" };
+      const expectedPath = "/path/1%202";
+
+      const result = replacePathParams(path, params);
+
+      expect(result).toBe(expectedPath);
+    });
+
     it("パスパラメータが不足している場合はエラーになること", () => {
       const path = "/path/[param1]/[param2]";
       const params = { param1: "1" };
@@ -35,6 +45,16 @@ describe("replacePathParams", () => {
       const path = "/path/[...params]";
       const params = { params: ["1", "2"] };
       const expectedPath = "/path/1/2";
+
+      const result = replacePathParams(path, params);
+
+      expect(result).toBe(expectedPath);
+    });
+
+    it("パラメータがエンコードされること", () => {
+      const path = "/path/[...params]";
+      const params = { params: ["1 2", "3"] };
+      const expectedPath = "/path/1%202/3";
 
       const result = replacePathParams(path, params);
 
@@ -61,6 +81,16 @@ describe("replacePathParams", () => {
       const path = "/path/[[...params]]";
       const params = { params: ["1", "2"] };
       const expectedPath = "/path/1/2";
+
+      const result = replacePathParams(path, params);
+
+      expect(result).toBe(expectedPath);
+    });
+
+    it("パラメータがエンコードされること", () => {
+      const path = "/path/[[...params]]";
+      const params = { params: ["1 2", "3"] };
+      const expectedPath = "/path/1%202/3";
 
       const result = replacePathParams(path, params);
 

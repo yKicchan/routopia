@@ -160,6 +160,20 @@ describe("routes", () => {
 
       expect(url).toBe(expectedUrl);
     });
+
+    it("エンコードされること", () => {
+      const expectedPath = "/queries/optional";
+      const expectedQueries = {
+        string: "string with space",
+      };
+      const expectedUrl = `${expectedPath}?string=string%20with%20space`;
+
+      const url = routes["/queries/optional"].get({
+        queries: expectedQueries,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
   });
 
   describe("パスパラメータが宣言されている場合", () => {
@@ -221,6 +235,18 @@ describe("routes", () => {
       const expectedPath = "/hash";
       const expectedHash = "hash";
       const expectedUrl = `${expectedPath}#${expectedHash}`;
+
+      const url = routes["/hash"].get({
+        hash: expectedHash,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("エンコードされること", () => {
+      const expectedPath = "/hash";
+      const expectedHash = "hash with space";
+      const expectedUrl = `${expectedPath}#hash%20with%20space`;
 
       const url = routes["/hash"].get({
         hash: expectedHash,

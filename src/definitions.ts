@@ -29,7 +29,7 @@ function method(endpoint: string, baseUrl = "") {
   return (options?: Options) => {
     const path = replacePathParams(endpoint, options?.params);
     const queries = options?.queries ? `?${queryString.stringify(options.queries)}` : "";
-    const hash = options?.hash ? `#${options.hash}` : "";
+    const hash = options?.hash ? `#${encodeURIComponent(options.hash)}` : "";
     return `${baseUrl}${path}${queries}${hash}`;
   };
 }
