@@ -1,7 +1,7 @@
 {
   "name": "routopia",
   "description": "Friendly and fully typed route definition library.",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "author": "yKicchan",
   "license": "MIT",
   "files": ["dist", "package.json", "README.md", "LICENSE.md"],
@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "rm -rf dist && pnpm build:esbuild && pnpm build:types",
-    "build:esbuild": "node ./esbuild.config.mjs",
+    "build:esbuild": "node scripts/build.mjs",
     "build:types": "tsc --declaration --emitDeclarationOnly --declarationDir './dist'",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
