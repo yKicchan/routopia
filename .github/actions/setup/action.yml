@@ -1,6 +1,11 @@
 name: Setup
 description: "Setup Node.js"
 
+inputs:
+  registry:
+    description: "The registry URL to use"
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -12,6 +17,7 @@ runs:
       with:
         node-version-file: .node-version
         cache: "pnpm"
+        registry-url: ${{ inputs.registry }}
     - name: Install dependencies
       shell: bash
       run: pnpm install
