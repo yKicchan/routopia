@@ -247,11 +247,11 @@ type ReplacePathParams<
  * Utility type that removes optional catch-all parameters from the path
  *
  * @example
- * OmitOptionalCatchAll<"/path/[[...params]]">
+ * ExcludeOptionalCatchAll<"/path/[[...params]]">
  * // "/path/"
  */
-type OmitOptionalCatchAll<Path extends string> = Path extends `${infer Before}[[...${string}]]${infer After}`
-  ? `${Before}${OmitOptionalCatchAll<After>}`
+type ExcludeOptionalCatchAll<Path extends string> = Path extends `${infer Before}[[...${string}]]${infer After}`
+  ? `${Before}${ExcludeOptionalCatchAll<After>}`
   : Path;
 
 /**
@@ -266,7 +266,7 @@ type OmitOptionalCatchAll<Path extends string> = Path extends `${infer Before}[[
  */
 type ApplyParams<Path extends string, Params extends Nullable<Optional<ExtractParams<Path>>>> = TrimPath<
   keyof Params extends never
-    ? OmitOptionalCatchAll<Path>
+    ? ExcludeOptionalCatchAll<Path>
     : Params extends SchemaParams
       ? ReplacePathParams<Path, Params>
       : never
