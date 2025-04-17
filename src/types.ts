@@ -8,7 +8,7 @@ type HttpMethod = "get" | "post" | "put" | "delete";
 /**
  * Schema type for path parameter
  */
-type SchemaParam = string | number | readonly (string | number)[] | undefined;
+type SchemaParam = string | number | ReadonlyArray<string | number> | undefined;
 
 /**
  * Schema type for path parameters
@@ -26,7 +26,7 @@ type SchemaQueries = Record<
   | null
   | bigint
   | undefined
-  | readonly (boolean | number | string | null | bigint | undefined)[]
+  | ReadonlyArray<boolean | number | string | null | bigint | undefined>
 >;
 
 /**
@@ -48,10 +48,10 @@ export type Options = { params?: SchemaParams; queries?: SchemaQueries; hash?: s
  * // { params?: (string | number)[] }
  */
 type ExtractParams<Endpoint extends string> = Endpoint extends `${infer Before}[[...${infer Param}]]${infer After}`
-  ? { [K in Param]: Extract<SchemaParam, readonly unknown[] | undefined> } & ExtractParams<Before> &
+  ? { [K in Param]: Extract<SchemaParam, ReadonlyArray<unknown> | undefined> } & ExtractParams<Before> &
       ExtractParams<After>
   : Endpoint extends `${infer Before}[...${infer Param}]${infer After}`
-    ? { [K in Param]: Extract<SchemaParam, readonly unknown[]> } & ExtractParams<Before> & ExtractParams<After>
+    ? { [K in Param]: Extract<SchemaParam, ReadonlyArray<unknown>> } & ExtractParams<Before> & ExtractParams<After>
     : Endpoint extends `${string}[${infer Param}]${infer After}`
       ? { [K in Param]: Extract<SchemaParam, string | number> } & ExtractParams<After>
       : unknown;
@@ -121,7 +121,7 @@ type PickRequired<T> = {
  * // false
  */
 type HasRequired<T> = (
-  T extends readonly unknown[]
+  T extends ReadonlyArray<unknown>
     ? false
     : T extends object
       ? keyof PickRequired<T> extends never
@@ -185,9 +185,9 @@ type ActualOptions<Schema extends Options> = Omit<
  * JoinParams<["123", "456"]>
  * // "123/456"
  */
-type JoinParams<T extends readonly unknown[], Acc extends string = ""> = T extends readonly [
+type JoinParams<T extends ReadonlyArray<unknown>, Acc extends string = ""> = T extends readonly [
   infer Head extends Extract<SchemaParam, string | number>,
-  ...infer Tail extends readonly unknown[],
+  ...infer Tail extends ReadonlyArray<unknown>,
 ]
   ? Tail["length"] extends 0
     ? Head
@@ -225,13 +225,13 @@ type ReplacePathParams<
   Params extends SchemaParams,
 > = Path extends `${infer Before}[[...${infer Param}]]${infer After}`
   ? Param extends keyof Params
-    ? Params[Param] extends Extract<SchemaParam, readonly unknown[]>
+    ? Params[Param] extends Extract<SchemaParam, ReadonlyArray<unknown>>
       ? `${ReplacePathParams<Before, Params>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params>}`
       : never
     : `${ReplacePathParams<Before, Params>}${ReplacePathParams<After, Params>}`
   : Path extends `${infer Before}[...${infer Param}]${infer After}`
     ? Param extends keyof Params
-      ? Params[Param] extends Extract<SchemaParam, readonly unknown[]>
+      ? Params[Param] extends Extract<SchemaParam, ReadonlyArray<unknown>>
         ? `${ReplacePathParams<Before, Params>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params>}`
         : never
       : never
@@ -348,17 +348,13 @@ export type Empty = Nullable<Record<string, never>>;
  * - Accepts parameters depending on whether required fields exist
  */
 type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = OptionsSchema extends Empty
-  ? // メソッド定義が空の場合は引数なしにする
-    () => `${BaseUrl}${Endpoint}`
+  ? () => `${BaseUrl}${Endpoint}`
   : OptionsSchema extends Options
-    ? // メソッド定義が空でない場合はメソッド定義に必須プロパティがあるか判定
-      HasRequired<ActualOptions<OptionsSchema>> extends true
-      ? // 必須プロパティがあれば引数を必須にする
-        <Options extends ActualOptions<OptionsSchema>>(
+    ? HasRequired<ActualOptions<OptionsSchema>> extends true
+      ? <Options extends ActualOptions<OptionsSchema>>(
           options: Options,
         ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
-      : // 必須プロパティがなければ引数を省略可能にする
-        <Options extends ActualOptions<OptionsSchema>>(
+      : <Options extends ActualOptions<OptionsSchema>>(
           options?: Options,
         ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
     : never;
