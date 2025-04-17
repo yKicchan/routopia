@@ -76,7 +76,7 @@ fi
 echo -e "${GRAY}[debug] 5. Build the project & Commit dist folder${OFF}"
 release_branch="releases/$new_tag"
 git switch -c "$release_branch" "$git_base_branch" > /dev/null
-if ! npm run build > /dev/null; then
+if ! pnpm run build > /dev/null; then
     echo -e "${BOLD_RED}Build failed. Aborting release process.${OFF}"
     git switch "$prev_branch" > /dev/null
     exit 1
