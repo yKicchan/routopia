@@ -6,3 +6,5 @@ export default {
   type,
   empty,
 };
+
+export { routes, type, empty };
