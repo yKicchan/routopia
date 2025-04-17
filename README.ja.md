@@ -24,7 +24,7 @@ npm install routopia
 ### Define Routes
 
 ```ts
-import * as routopia from 'routopia';
+import routopia from 'routopia';
 
 const myRoutes = routopia.routes({
   "/users": {
@@ -64,7 +64,7 @@ myRoutes["/path/[id]"].get({ params: { id: 123 }, queries: { q: "query" }  });
 ## 🌐 Include Base URL
 
 ```ts
-import * as routopia from 'routopia';
+import routopia from 'routopia';
 
 const myApiRoutes = routopia.routes("https://api.example.com", {
   "/users": {
@@ -87,7 +87,7 @@ export function createMyApiRoutes<T extends ExpectedSchema<T>>(schema: T) {
 ```
 
 ```ts
-import * as routopia from 'routopia';
+import routopia from 'routopia';
 import { createMyApiRoutes } from './path/to/createMyApiRoutes';
 
 const usersApiRoutes = createMyApiRoutes({
