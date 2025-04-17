@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: ./.github/actions/setup
+      - name: Build
+        run: pnpm run build
+      - name: Generate test coverage
+        run: pnpm run coverage
+      - name: Make coverage badge
+        run: npx make-coverage-badge
+      - name: Generate directory listing
+        uses: yKicchan/generate-directory-listing-action@v1
+        with:
+          target: "."
+          ignore: "node_modules"
+      - name: Remove node_modules
+        run: rm -rf node_modules
+      - name: Upload artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./"
+  deploy:
+    needs: [build]
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
