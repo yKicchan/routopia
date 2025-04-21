@@ -185,14 +185,14 @@ type ActualOptions<Schema extends Options> = Omit<
  * JoinParams<["123", "456"]>
  * // "123/456"
  */
-type JoinParams<T extends ReadonlyArray<unknown>, Acc extends string = ""> = T extends readonly [
+type JoinParams<T extends ReadonlyArray<unknown>> = T extends readonly [
   infer Head extends Extract<SchemaParam, string | number>,
   ...infer Tail extends ReadonlyArray<unknown>,
 ]
   ? Tail["length"] extends 0
     ? Head
-    : `${Head}${Acc}/${JoinParams<Tail, Acc>}`
-  : `${Acc}${string}`;
+    : `${Head}/${JoinParams<Tail>}`
+  : "";
 
 /**
  * Utility type that trims double slashes and trailing slash from a path string
