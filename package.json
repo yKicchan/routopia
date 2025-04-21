@@ -1,7 +1,7 @@
 {
   "name": "routopia",
   "description": "Type-safe URL builder based on your route definitions.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "author": "yKicchan",
   "license": "MIT",
   "files": ["dist", "package.json", "README.md", "LICENSE.md"],
@@ -34,7 +34,7 @@
     "check": "tsc --noEmit && biome check",
     "fix": "tsc --noEmit && biome check --write"
   },
-  "keywords": ["route", "typed", "typescript", "path", "type-safe"],
+  "keywords": ["typescript", "url", "builder", "route", "path"],
   "packageManager": "pnpm@10.7.1+sha256.dc514890ea719003cb7a57d6b21af24fdafadd9f171e7567eca1665d7cfcef76",
   "dependencies": {
     "query-string": "^6.14.1"
