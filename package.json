@@ -37,9 +37,7 @@
     "release": "pnpm build && pnpm publish --provenance --no-git-checks --access public"
   },
   "keywords": ["typescript", "url", "builder", "route", "path"],
-  "dependencies": {
-    "query-string": "6.14.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@changesets/changelog-github": "0.5.1",

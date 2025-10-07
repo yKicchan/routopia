@@ -1,6 +1,5 @@
-import { stringify } from "query-string";
 import type { ActualSchema, Empty, ExpectedSchema, Options } from "./types";
-import { replacePathParams } from "./utilities";
+import { replacePathParams, stringifyQueries } from "./utilities";
 
 /**
  * Utility used to define parameter types in parameter schemas
@@ -28,7 +27,7 @@ export const empty: Empty = undefined;
 function method(endpoint: string, baseUrl = "") {
   return (options?: Options) => {
     const path = replacePathParams(endpoint, options?.params);
-    const queries = options?.queries ? `?${stringify(options.queries)}` : "";
+    const queries = options?.queries ? `?${stringifyQueries(options.queries)}` : "";
     const hash = options?.hash ? `#${encodeURIComponent(options.hash)}` : "";
     return `${baseUrl}${path}${queries}${hash}`;
   };

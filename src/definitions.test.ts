@@ -1,5 +1,5 @@
-import { stringify } from "query-string";
 import schema from ".";
+import { stringifyQueries } from "./utilities";
 
 describe("routes", () => {
   const routes = schema.routes({
@@ -129,7 +129,7 @@ describe("routes", () => {
         boolean: true,
         array: ["string"],
       };
-      const expectedUrl = `${expectedPath}?${stringify(expectedQueries)}`;
+      const expectedUrl = `${expectedPath}?${stringifyQueries(expectedQueries)}`;
 
       const url = routes["/queries/required"].get({
         queries: expectedQueries,
@@ -144,7 +144,7 @@ describe("routes", () => {
         string: "string",
         number: 1,
       };
-      const expectedUrl = `${expectedPath}?${stringify(expectedQueries)}`;
+      const expectedUrl = `${expectedPath}?${stringifyQueries(expectedQueries)}`;
 
       const url = routes["/queries/both"].get({
         queries: expectedQueries,
@@ -166,7 +166,7 @@ describe("routes", () => {
       const expectedQueries = {
         string: "string with space",
       };
-      const expectedUrl = `${expectedPath}?string=string%20with%20space`;
+      const expectedUrl = `${expectedPath}?${stringifyQueries(expectedQueries)}`;
 
       const url = routes["/queries/optional"].get({
         queries: expectedQueries,
@@ -270,7 +270,7 @@ describe("routes", () => {
       const expectedPath = `/all/${expectedParams.param}`;
       const expectedQueries = { optional: "optional" };
       const expectedHash = "hash";
-      const expectedUrl = `${expectedPath}?${stringify(expectedQueries)}#${expectedHash}`;
+      const expectedUrl = `${expectedPath}?${stringifyQueries(expectedQueries)}#${expectedHash}`;
 
       const url = routes["/all/[param]"].get({
         params: expectedParams,
@@ -311,7 +311,7 @@ describe("routes", () => {
     const expectedParams = { param: "1" };
     const expectedQueries = { q: "query" };
     const expectedHash = "hash";
-    const expectedUrl = `${baseUrl}/path/${expectedParams.param}?${stringify(expectedQueries)}#${expectedHash}`;
+    const expectedUrl = `${baseUrl}/path/${expectedParams.param}?${stringifyQueries(expectedQueries)}#${expectedHash}`;
 
     const url = routes["/path/[param]"].get({
       params: expectedParams,

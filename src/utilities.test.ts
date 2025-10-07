@@ -1,4 +1,4 @@
-import { replacePathParams } from "./utilities";
+import { replacePathParams, stringifyQueries } from "./utilities";
 
 describe("replacePathParams", () => {
   it("パスパラメータがない場合は元のパスを返すこと", () => {
@@ -131,6 +131,60 @@ describe("replacePathParams", () => {
       const params = { params: ["2", "3"] };
 
       expect(() => replacePathParams(path, params)).toThrowError('"param" is required');
+    });
+  });
+});
+
+describe("stringifyQueries", () => {
+  it("クエリパラメータがない場合は空文字を返すこと", () => {
+    const queries = {};
+    const expectedQueryString = "";
+
+    const result = stringifyQueries(queries);
+
+    expect(result).toBe(expectedQueryString);
+  });
+
+  describe("クエリパラメータが設定されている場合", () => {
+    it.each([
+      [{ string: "string" }, "string=string"],
+      [{ number: 1 }, "number=1"],
+      [{ boolean: true }, "boolean=true"],
+      [{ null: null }, "null=null"],
+      [{ undefined: undefined }, "undefined=undefined"],
+      [{ bigint: BigInt(123) }, "bigint=123"],
+      [{ empty: "" }, "empty="],
+    ])("クエリストリングが返ること", (queries, expected) => {
+      const result = stringifyQueries(queries);
+
+      expect(result).toBe(expected);
+    });
+
+    it("クエリパラメータがキー名でソートされること", () => {
+      const queries = { z: "last", a: "first", n: "middle" };
+      const expectedQueryString = "a=first&n=middle&z=last";
+
+      const result = stringifyQueries(queries);
+
+      expect(result).toBe(expectedQueryString);
+    });
+
+    it("クエリパラメータがエンコードされること", () => {
+      const queries = { encode: "りんご" };
+      const expectedQueryString = "encode=%E3%82%8A%E3%82%93%E3%81%94";
+
+      const result = stringifyQueries(queries);
+
+      expect(result).toBe(expectedQueryString);
+    });
+
+    it("クエリパラメータの値が配列の場合、キーを繰り返して返すこと", () => {
+      const queries = { array: ["1", "2", "3"] };
+      const expectedQueryString = "array=1&array=2&array=3";
+
+      const result = stringifyQueries(queries);
+
+      expect(result).toBe(expectedQueryString);
     });
   });
 });
