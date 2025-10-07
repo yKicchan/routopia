@@ -38,6 +38,13 @@ describe("replacePathParams", () => {
 
       expect(() => replacePathParams(path, params)).toThrowError('"param2" is required');
     });
+
+    it("パスパラメータが配列の場合はエラーになること", () => {
+      const path = "/path/[param]";
+      const params = { param: ["1", "2"] };
+
+      expect(() => replacePathParams(path, params)).toThrowError('"param" must be not an array');
+    });
   });
 
   describe("可変長なパスパラメータがある場合", () => {
