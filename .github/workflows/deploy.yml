@@ -19,18 +19,20 @@ jobs:
       - name: Generate test coverage
         run: pnpm run coverage
       - name: Make coverage badge
-        run: npx make-coverage-badge
+        run: pnpm run make-coverage-badge
       - name: Generate directory listing
         uses: yKicchan/generate-directory-listing-action@v1
         with:
-          target: "."
-          ignore: "node_modules"
-      - name: Remove node_modules
-        run: rm -rf node_modules
+          target: "./artifacts"
+          ignore: "README.md, gitignore"
+      - name: Remove ignored files from upload
+        run: |
+          rm -f ./artifacts/README.md
+          rm -f ./artifacts/.gitignore
       - name: Upload artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./"
+          path: "./artifacts"
   deploy:
     needs: [build]
     permissions:

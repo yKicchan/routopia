@@ -9,7 +9,7 @@ export default defineConfig({
       TZ: "Asia/Tokyo",
     },
     coverage: {
-      reportsDirectory: "../coverage",
+      reportsDirectory: "../artifacts/coverage",
       reporter: ["text", "json-summary", "html"],
     },
   },
