@@ -4,12 +4,7 @@
   "version": "0.1.4",
   "author": "yKicchan",
   "license": "MIT",
-  "files": [
-    "dist",
-    "package.json",
-    "README.md",
-    "LICENSE.md"
-  ],
+  "files": ["dist", "package.json", "README.md", "LICENSE.md"],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -37,15 +32,10 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "check": "tsc --noEmit && biome check",
-    "fix": "tsc --noEmit && biome check --write"
+    "fix": "tsc --noEmit && biome check --write",
+    "release": "pnpm build && pnpm publish --provenance --no-git-checks --access public"
   },
-  "keywords": [
-    "typescript",
-    "url",
-    "builder",
-    "route",
-    "path"
-  ],
+  "keywords": ["typescript", "url", "builder", "route", "path"],
   "dependencies": {
     "query-string": "6.14.1"
   },
