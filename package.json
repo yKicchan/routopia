@@ -28,7 +28,7 @@
     "url": "https://github.com/yKicchan/routopia/issues"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "coverage:badge": "make-coverage-badge --report-path=./artifacts/coverage/coverage-summary.json --output-path=./artifacts/coverage/badge.svg",
@@ -50,7 +50,7 @@
     "@vitest/coverage-v8": "3.2.4",
     "husky": "9.1.7",
     "make-coverage-badge": "1.2.0",
-    "tsup": "8.5.0",
+    "tsdown": "0.15.5",
     "typescript": "5.9.3",
     "vitest": "3.2.4"
   },
