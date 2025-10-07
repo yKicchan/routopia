@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - name: Setup Node.js
         uses: ./.github/actions/setup
       - name: Build
@@ -21,7 +21,7 @@ jobs:
       - name: Make coverage badge
         run: pnpm run make-coverage-badge
       - name: Generate directory listing
-        uses: yKicchan/generate-directory-listing-action@v1
+        uses: yKicchan/generate-directory-listing-action@5394a35a894df73f47e6f6925cbab737256f33a1 # v1.1.0
         with:
           target: "./artifacts"
           ignore: "README.md, gitignore"
@@ -30,7 +30,7 @@ jobs:
           rm -f ./artifacts/README.md
           rm -f ./artifacts/.gitignore
       - name: Upload artifacts
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: "./artifacts"
   deploy:
@@ -45,4 +45,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
