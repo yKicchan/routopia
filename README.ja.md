@@ -66,9 +66,9 @@ myRoutes["/path/[id]"].get({ params: { id: 123 }, queries: { q: "query" }  });
 ```
 
 > [!TIP]
-> 戻り値はテンプレートリテラル型で詳細に推論されます
-> 例えば `const path = myRoutes["/users"].get()` の場合、 `path` の型は `"/users"` になります。
-> `string` 型で受けたい場合は型注釈を追加してください
+> 戻り値はテンプレートリテラル型で詳細に推論されます  
+> 例えば `const path = myRoutes["/users"].get()` の場合、 `path` の型は `"/users"` になります。  
+> `string` 型で受けたい場合は型注釈を追加してください  
 > `const path: string = myRoutes["/users"].get()`
 
 ## 📘 Why routopia?
@@ -309,7 +309,7 @@ const myUsersRoutes = routes("/users", {
 });
 
 myUsersRoutes["/path"].get();
-// => "/v1/path"
+// => "/users/path"
 
 const myApiRoutes = routes("https://api.example.com", {
   "/path": {

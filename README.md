@@ -66,9 +66,9 @@ myRoutes["/path/[id]"].get({ params: { id: 123 }, queries: { q: "query" }  });
 ```
 
 > [!TIP]  
-> The return value is inferred in detail by template literal types.
-> For example, if `const path = myRoutes["/users"].get()`, the type of path will be `"/users"`.
-> If you want to receive it as a string type, please add a type annotation:
+> The return value is inferred in detail by template literal types.  
+> For example, if `const path = myRoutes["/users"].get()`, the type of path will be `"/users"`.  
+> If you want to receive it as a string type, please add a type annotation:  
 > `const path: string = myRoutes["/users"].get()`
 
 ## 
@@ -311,7 +311,7 @@ const myUsersRoutes = routes("/users", {
 });
 
 myUsersRoutes["/path"].get();
-// => "/v1/path"
+// => "/users/path"
 
 const myApiRoutes = routes("https://api.example.com", {
   "/path": {
