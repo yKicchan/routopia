@@ -1,3 +1,6 @@
+/**
+ * Utility type to allow a type or undefined
+ */
 type Nullable<T> = T | undefined;
 
 /**
@@ -45,7 +48,7 @@ export type Options = { params?: SchemaParams; queries?: SchemaQueries; hash?: s
  * // { params: (string | number)[] }
  *
  * ExtractParams<"/path/[[...params]]">
- * // { params?: (string | number)[] }
+ * // { params: (string | number)[] | undefined }
  */
 type ExtractParams<Endpoint extends string> = Endpoint extends `${infer Before}[[...${infer Param}]]${infer After}`
   ? { [K in Param]: Extract<SchemaParam, ReadonlyArray<unknown> | undefined> } & ExtractParams<Before> &
@@ -146,11 +149,26 @@ type Optional<T> = {
 };
 
 /**
+ * Utility type that makes all properties of an object deeply optional if it has no required fields.
+ *
+ * @example
+ * DeepOptional<{ a: { b?: string } }>
+ * // { a?: { b?: string } }
+ */
+type DeepOptional<T> = keyof T extends never
+  ? T
+  : {
+      [K in keyof T as HasRequired<T[K]> extends true ? K : never]: DeepOptional<T[K]>;
+    } & {
+      [K in keyof T as HasRequired<T[K]> extends false ? K : never]?: DeepOptional<T[K]>;
+    };
+
+/**
  * Utility type that makes all properties of an object readonly
  *
  * @example
  * ReadonlyProperties<{ array: string[] }>
- * // { readonly array: readonly string[] }
+ * // { array: readonly string[] }
  */
 type ReadonlyProperties<T> = {
   [K in keyof T]: Readonly<T[K]>;
@@ -159,24 +177,63 @@ type ReadonlyProperties<T> = {
 /**
  * Converts schema definition into optional keys if it has no required fields.
  * Readonly is marked to accept as const arguments.
+ * Please refer to each ActualXXXX type for more details.
+ */
+type ActualOptions<Schema extends Options, Endpoint extends string> = ActualParams<Schema["params"], Endpoint> &
+  ActualQueries<Schema["queries"]> &
+  ActualHash<Schema["hash"]>;
+
+/**
+ * Makes path parameters deeply optional if they are optional catch-all parameters.
  *
  * @example
- * ActualOptions<{ queries: { search?: string; count?: number  } }>
- * // { queries?: { search?: string; count?: number } }
+ * ActualParams<{ param1: string; param2: string[] }, "/[param1]/[[...param2]]">
+ * // { params: { param1: string; param2?: string[] } }
  *
- * ActualOptions<{ queries: { search: string; count?: number  } }>
- * // { queries: { search: string; count?: number } }
+ * ActualParams<{ param: string[] }, "/[[...param]]">
+ * // { params?: { param?: string[] } }
  */
-type ActualOptions<Schema extends Options> = Omit<
-  {
-    [K in keyof Schema as HasRequired<Schema[K]> extends true ? K : never]: Optional<ReadonlyProperties<Schema[K]>>;
-  } & {
-    [K in keyof Schema as HasRequired<Schema[K]> extends false ? K : never]?: Optional<ReadonlyProperties<Schema[K]>>;
-  },
-  "hash"
-> & {
-  hash?: Schema["hash"];
-};
+type ActualParams<Schema extends Options["params"], Endpoint extends string> = DeepOptional<{
+  params: ReadonlyProperties<
+    {
+      [K in keyof Schema as K extends OptionalCatchAllSegments<Endpoint> ? K : never]?: Schema[K];
+    } & {
+      [K in keyof Schema as K extends OptionalCatchAllSegments<Endpoint> ? never : K]: Schema[K];
+    }
+  >;
+}>;
+
+/**
+ * Makes query parameters deeply optional if there are no required fields.
+ *
+ * @example
+ * ActualQueries<{ required: string; optional?: number }>
+ * // { queries: { required: readonly string; optional?: readonly number } }
+ *
+ * ActualQueries<{ optional1?: string; optional2?: number }>
+ * // { queries?: { optional1?: readonly string; optional2?: readonly number } }
+ */
+type ActualQueries<Schema extends Options["queries"]> = DeepOptional<{ queries: ReadonlyProperties<Schema> }>;
+
+/**
+ * Keeps hash as is, since it's always optional in the schema definition.
+ *
+ * @example
+ * ActualHash<"hash">
+ * // { hash?: "hash" }
+ */
+type ActualHash<Schema extends Options["hash"]> = { hash?: Schema };
+
+/**
+ * Utility type that extracts optional catch-all parameter names from an endpoint string
+ *
+ * @example
+ * OptionalCatchAllSegments<"/path/[[...params]]/[id]/[[...moreParams]]">
+ * // "params" | "moreParams"
+ */
+type OptionalCatchAllSegments<T extends string> = T extends `${string}[[...${infer Param}]]${infer After}`
+  ? Param | OptionalCatchAllSegments<After>
+  : never;
 
 /**
  * Utility type that joins an array of strings or numbers into a single string
@@ -350,11 +407,11 @@ export type Empty = Nullable<Record<string, never>>;
 type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = OptionsSchema extends Empty
   ? () => `${BaseUrl}${Endpoint}`
   : OptionsSchema extends Options
-    ? HasRequired<ActualOptions<OptionsSchema>> extends true
-      ? <Options extends ActualOptions<OptionsSchema>>(
+    ? HasRequired<ActualOptions<OptionsSchema, Endpoint>> extends true
+      ? <Options extends ActualOptions<OptionsSchema, Endpoint>>(
           options: Options,
         ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
-      : <Options extends ActualOptions<OptionsSchema>>(
+      : <Options extends ActualOptions<OptionsSchema, Endpoint>>(
           options?: Options,
         ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
     : never;

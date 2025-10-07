@@ -167,7 +167,7 @@ myRoutes["/path/[id]"].get();
 
 - Define catch-all parameters like `[...param]`.
 - The type of catch-all parameters can be specified satisfying `(string | number)[]`.
-- Using double brackets like `[[...param]]` allows specifying `undefined` in addition to the above.
+- Using double brackets like `[[...param]]` allows `undefined` in addition to the above.
 - This feature is equivalent to [Next.js's Catch-all Segments](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes#catch-all-segments).
 
 ```ts
@@ -184,7 +184,7 @@ const myRoutes = routes({
   "/path/[[...slug]]": {
     get: {
       params: {
-        slug: type as number[] | undefined,
+        slug: type as number[],
       },
     },
   },

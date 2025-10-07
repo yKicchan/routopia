@@ -165,7 +165,7 @@ myRoutes["/path/[id]"].get();
 
 - `[...param]` のようにすることで可変長なパスパラメータを定義可能
 - 可変長なパスパラメータは `(string | number)[]` を満たす指定が可能
-- `[[...param]]` と二重にした場合は上記に加えて `undefined` の指定を許容
+- `[[...param]]` と二重にした場合は上記に加えて `undefined` を許容
 - これは [Next.js の Catch-all Segments](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes#catch-all-segments) 相当の機能
 
 ```ts
@@ -182,7 +182,7 @@ const myRoutes = routes({
   "/path/[[...slug]]": {
     get: {
       params: {
-        slug: type as number[] | undefined,
+        slug: type as number[],
       },
     },
   },

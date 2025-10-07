@@ -34,7 +34,7 @@ describe("routes", () => {
     "/params/[[...params]]": {
       get: {
         params: {
-          params: schema.type as string[] | undefined,
+          params: schema.type as string[],
         },
       },
     },
