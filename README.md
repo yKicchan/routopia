@@ -15,7 +15,7 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 ## ✨ Features
 
 - 🔒 Type-safe route definition and path construction
-- 📦 Lightweight and framework-agnostic
+- 📦 Lightweight and no dependencies
 - 🥰 Smooth development experience with type inference and autocompletion
 - 👍 Supports use cases like Base URL and Catch-all Parameters
 - 🧩 Strict URL type inference using template literal types
@@ -51,7 +51,7 @@ const myRoutes = routes({
 });
 ```
 
-### Use Routes
+### 3. Use Routes
 
 ```ts
 myRoutes["/users"].get();
@@ -71,7 +71,7 @@ myRoutes["/path/[id]"].get({ params: { id: 123 }, queries: { q: "query" }  });
 > If you want to receive it as a string type, please add a type annotation:  
 > `const path: string = myRoutes["/users"].get()`
 
-## 
+## 📘 Why routopia?
 
 Provides type-safe route definitions including path parameters and query parameters, powered by strong type inference and IDE autocompletion features.
 
@@ -81,11 +81,17 @@ The main differences from other libraries are as follows:
 - Autocomplete helps you find and filter paths during usage.
 - Detailed inference is obtained through template literal types.
 
-routopia focuses on declaratively and simply obtaining type-safe URLs.
+routopia focuses on declaratively and simply getting type-safe URLs.
 
 If you need more advanced features like automatic generation or regular expressions, other libraries might be better.
 
-Conversely, if you need simple URL definitions, such as for Next.js API paths, SPA routing, or if you are not using ecosystems like OpenAPI generators for some reason, routopia might be a good match.
+Conversely, routopia might be a good match for the following cases:
+
+- When you want to simply use features like Next.js Route Handlers
+- When managing simple internal links or using typedRoutes in Next.js
+- When you need to handle links to external sites or third-party API endpoints without an available SDK
+- When you're not using ecosystems like OpenAPI generators for some reason
+- When you need a simple URL builder
 
 ## 📖 API Reference
 
