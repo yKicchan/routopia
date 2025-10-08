@@ -70,3 +70,12 @@ export function stringifyQueries(queries: Options["queries"]): string {
   searchParams.sort();
   return searchParams.toString();
 }
+
+/**
+ * Type guard to check if a key is one of the keys in the Options type.
+ * @param key - The key to check.
+ */
+export function isOptions(key: string): key is keyof Options {
+  const optionsKeys: (keyof Options)[] = ["params", "queries", "hash"];
+  return optionsKeys.includes(key as (typeof optionsKeys)[number]);
+}

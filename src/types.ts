@@ -401,6 +401,17 @@ type ActualReturn<Path extends string, Options> = ExpectedPath<
 export type Empty = Nullable<Record<string, never>>;
 
 /**
+ * Utility type that enforces mutual exclusivity between two types
+ *
+ * @example
+ * type T = Exclusive<{ a: string }, { b: number }>
+ * const x: T = { a: "" } // valid
+ * const y: T = { b: 0 } // valid
+ * const z: T = { a: "", b: 0 } // error
+ */
+type Exclusive<T, U> = (T & { [K in keyof U]?: never }) | (U & { [K in keyof T]?: never });
+
+/**
  * Function type that returns a URL string based on the schema definition
  * - Accepts parameters depending on whether required fields exist
  */
@@ -424,7 +435,9 @@ type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = Op
  */
 export type ExpectedSchema<Schema> = {
   [EndpointKey in keyof Schema]: EndpointKey extends string
-    ? Partial<Record<HttpMethod, ExpectedOptions<EndpointKey>>>
+    ? Schema[EndpointKey] extends Record<string, never>
+      ? never
+      : Exclusive<Partial<Record<HttpMethod, ExpectedOptions<EndpointKey>>>, ExpectedOptions<EndpointKey>> | Empty
     : never;
 };
 
@@ -435,7 +448,17 @@ export type ExpectedSchema<Schema> = {
 export type ActualSchema<Schema, BaseUrl extends string> = {
   [EndpointKey in keyof Schema]: EndpointKey extends string
     ? {
-        [MethodKey in keyof Schema[EndpointKey]]: Method<BaseUrl, EndpointKey, Schema[EndpointKey][MethodKey]>;
+        [Key in keyof Schema[EndpointKey] as Key extends HttpMethod ? Key : never]: Method<
+          BaseUrl,
+          EndpointKey,
+          Schema[EndpointKey][Key]
+        >;
+      } & {
+        [Key in "get" as Schema[EndpointKey] extends Empty | Options ? Key : never]: Method<
+          BaseUrl,
+          EndpointKey,
+          Schema[EndpointKey]
+        >;
       }
     : never;
 };

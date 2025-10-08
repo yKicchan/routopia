@@ -1,5 +1,5 @@
 import type { ActualSchema, Empty, ExpectedSchema, Options } from "./types";
-import { replacePathParams, stringifyQueries } from "./utilities";
+import { isOptions, replacePathParams, stringifyQueries } from "./utilities";
 
 /**
  * Utility used to define parameter types in parameter schemas
@@ -9,9 +9,11 @@ import { replacePathParams, stringifyQueries } from "./utilities";
 export const type: unknown = undefined;
 
 /**
- * Utility used when no parameters are required for an endpoint method
+ * Utility used when no parameters are required for endpoints or methods
  * @example
- * { get: empty }
+ * routes({ "/path": { get: empty, post: empty } })
+ *
+ * routes({ "/path": empty })
  */
 export const empty: Empty = undefined;
 
@@ -34,11 +36,11 @@ function method(endpoint: string, baseUrl = "") {
 }
 
 /**
- * Takes a routes schema and returns an object with type-safe URL generators
- * Provides autocomplete for URL path parameters during definition, and type checking at usage
+ * Takes a route schema and returns an object of type-safe URL builders.
+ * It provides autocomplete for path parameters during definition and ensures type safety at usage.
  *
- * @param schema - Routes schema, which can include path parameters (e.g., "/users/[id]") and method definitions (e.g., { get: { params: { id: type as string } } })
- * @returns An object with type-safe URL generators for each route and method
+ * @param schema - The routes schema, defining endpoints, their associated HTTP methods (which can be omitted for the shorthand feature), and various options (e.g., path, query, and hash parameters).
+ * @returns An object containing type-safe URL builders for each route and method.
  * @example
  * import { routes, type, empty } from "routopia";
  *
@@ -53,7 +55,7 @@ function method(endpoint: string, baseUrl = "") {
  *       },
  *     },
  *     // No parameters needed
- *     post: empty
+ *     post: empty,
  *   },
  *   "/users/[id]": {
  *     get: {
@@ -63,16 +65,29 @@ function method(endpoint: string, baseUrl = "") {
  *       },
  *     },
  *   },
+ *
+ *   // The GET shorthand is available by omitting the method definition.
+ *   "/short": empty, // Equivalent to: "/short": { get: empty },
+ *   "/short/[param]": {
+ *     // The same applies to defining parameters.
+ *     params: {
+ *       param: type as string,
+ *     },
+ *     queries: {
+ *       q: type as string | undefined,
+ *     },
+ *     hash: type as string,
+ *   },
  * });
  */
 export function routes<Schema extends ExpectedSchema<Schema>>(schema: Schema): ActualSchema<Schema, "">;
 /**
- * Takes a base URL and a routes schema, and returns an object with type-safe URL generators
- * Provides autocomplete for URL path parameters during definition, and type checking at usage
+ * Takes a base URL and a routes schema, and returns an object of type-safe URL builders.
+ * It provides autocomplete for path parameters during definition and ensures type safety at usage.
  *
- * @param baseUrl - The base URL to prepend to the generated URLs
- * @param schema - Routes schema, which can include path parameters (e.g., "/users/[id]") and method definitions (e.g., { get: { params: { id: type as string } } })
- * @returns An object with type-safe URL generators for each route and method
+ * @param baseUrl - The base URL to prepend to the generated URLs.
+ * @param schema - The routes schema, defining endpoints, their associated HTTP methods (which can be omitted for the shorthand feature), and various options (e.g., path, query, and hash parameters).
+ * @returns An object containing type-safe URL builders for each route and method.
  * @example
  * import { routes, type, empty } from "routopia";
  *
@@ -97,6 +112,19 @@ export function routes<Schema extends ExpectedSchema<Schema>>(schema: Schema): A
  *       },
  *     },
  *   },
+ *
+ *   // The GET shorthand is available by omitting the method definition.
+ *   "/short": empty, // Equivalent to: "/short": { get: empty },
+ *   "/short/[param]": {
+ *     // The same applies to defining parameters.
+ *     params: {
+ *       param: type as string,
+ *     },
+ *     queries: {
+ *       q: type as string | undefined,
+ *     },
+ *     hash: type as string,
+ *   },
  * });
  */
 export function routes<BaseUrl extends string, Schema extends ExpectedSchema<Schema>>(
@@ -110,17 +138,26 @@ export function routes<Schema extends ExpectedSchema<Schema>, BaseUrl extends st
   const baseUrl = hasBaseUrl ? args[0] : "";
   const schema = hasBaseUrl ? args[1] : args[0];
 
-  return Object.entries<object>(schema).reduce(
-    (acc, [endpoint, methods]) =>
-      Object.assign(acc, {
-        [endpoint]: Object.keys(methods).reduce(
-          (acc, methodKey) =>
-            Object.assign(acc, {
-              [methodKey]: method(endpoint, baseUrl),
-            }),
-          {},
-        ),
-      }),
-    {},
-  ) as ActualSchema<Schema, BaseUrl>;
+  return Object.entries<object | Empty>(schema).reduce((acc, [endpoint, methodsOrOptions]) => {
+    const keys = methodsOrOptions && Object.keys(methodsOrOptions);
+
+    if (!keys || keys.every(isOptions)) {
+      return Object.assign(acc, {
+        [endpoint]: {
+          get: method(endpoint, baseUrl),
+        },
+      });
+    }
+
+    // The `keys` are `HttpMethod`, as enforced by `ExpectedSchema`.
+    return Object.assign(acc, {
+      [endpoint]: keys.reduce(
+        (acc, httpMethod) =>
+          Object.assign(acc, {
+            [httpMethod]: method(endpoint, baseUrl),
+          }),
+        {},
+      ),
+    });
+  }, {}) as ActualSchema<Schema, BaseUrl>;
 }

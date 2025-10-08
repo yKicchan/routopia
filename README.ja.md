@@ -99,7 +99,8 @@ routopia は宣言的で型安全な簡素な URL の取得に焦点を当てて
 - [Query Parameters](#query-parameters)
 - [Hash](#hash)
 - [Base URL](#base-url)
-- [Best Practices](#best-practices)
+- [Shorthand](#shorthand)
+- [Best Practice](#best-practice)
 
 ### No Parameters
 
@@ -325,6 +326,42 @@ const myApiRoutes = routes("https://api.example.com", {
 
 myApiRoutes["/path"].get();
 // => "https://api.example.com/path"
+```
+
+### Shorthand
+
+- メソッド定義を省略して直接パラメータを指定可能
+- この場合 GET メソッド定義と同じ意味になる
+
+```ts
+import { routes, empty, type } from 'routopia';
+
+const myRoutes = routes({
+  "/short": empty,
+  // = "/short": { get: empty }
+  
+  "/short/[param]": {
+    params: {
+      param: type as string,
+    },
+    queries: {
+      q: type as string | undefined,
+    },
+    hash: type as string,
+  },
+  // = "/short/[param]": { get: { params: {...}, queries: {...}, hash: ... } }
+});
+
+// 利用時は `get` メソッドとして呼び出す
+myRoutes["/short"].get();
+// => "/short"
+
+myRoutes["/short/[param]"].get({ 
+  params: { param: "abc" }, 
+  queries: { q: "query" }, 
+  hash: "anchor",
+});
+// => "/short/abc?q=query#anchor"
 ```
 
 ### Best practice

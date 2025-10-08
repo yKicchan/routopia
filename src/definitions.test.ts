@@ -84,6 +84,25 @@ describe("routes", () => {
         hash: schema.type as string,
       },
     },
+    "/short/empty": schema.empty,
+    "/short/all/[param]": {
+      params: {
+        param: schema.type as string,
+      },
+      queries: {
+        required: schema.type as string,
+      },
+      hash: schema.type as string,
+    },
+    "/short/all/[[...params]]": {
+      params: {
+        params: schema.type as string[],
+      },
+      queries: {
+        optional: schema.type as string | undefined,
+      },
+      hash: schema.type as string,
+    },
   });
 
   it("各エンドポイントに対応するオブジェクトが生成されること", () => {
@@ -93,7 +112,11 @@ describe("routes", () => {
     expect(routes).toHaveProperty("/queries/required");
     expect(routes).toHaveProperty("/queries/both");
     expect(routes).toHaveProperty("/queries/optional");
+    expect(routes).toHaveProperty("/hash");
     expect(routes).toHaveProperty(["/all/[param]"]);
+    expect(routes).toHaveProperty("/short/empty");
+    expect(routes).toHaveProperty("/short/all/[param]");
+    expect(routes).toHaveProperty("/short/all/[[...params]]");
   });
 
   it("各エンドポイントに対応するすべての HTTP メソッドが生成されること", () => {
@@ -107,7 +130,12 @@ describe("routes", () => {
     expect(routes["/queries/required"].get).toBeInstanceOf(Function);
     expect(routes["/queries/both"].get).toBeInstanceOf(Function);
     expect(routes["/queries/optional"].get).toBeInstanceOf(Function);
+    expect(routes["/hash"].get).toBeInstanceOf(Function);
     expect(routes["/all/[param]"].get).toBeInstanceOf(Function);
+
+    expect(routes["/short/empty"].get).toBeInstanceOf(Function);
+    expect(routes["/short/all/[param]"].get).toBeInstanceOf(Function);
+    expect(routes["/short/all/[[...params]]"].get).toBeInstanceOf(Function);
   });
 
   describe("HTTP メソッドに必要なパラメータがない(empty で宣言されている)場合", () => {
@@ -320,5 +348,39 @@ describe("routes", () => {
     });
 
     expect(url).toBe(expectedUrl);
+  });
+
+  describe("ショートハンド宣言(HttpMethod が省略されているとき)の場合", () => {
+    it("引数なしで URL を生成できること", () => {
+      const expectedUrl = "/short/empty";
+
+      const url = routes["/short/empty"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("すべてのパラメータを指定して URL を生成できること", () => {
+      const expectedParams = { param: "1" };
+      const expectedPath = `/short/all/${expectedParams.param}`;
+      const expectedQueries = { required: "required" };
+      const expectedHash = "hash";
+      const expectedUrl = `${expectedPath}?${stringifyQueries(expectedQueries)}#${expectedHash}`;
+
+      const url = routes["/short/all/[param]"].get({
+        params: expectedParams,
+        queries: expectedQueries,
+        hash: expectedHash,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("オプショナルなパラメータは指定なしで URL を生成できること", () => {
+      const expectedUrl = "/short/all";
+
+      const url = routes["/short/all/[[...params]]"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { replacePathParams, stringifyQueries } from "./utilities";
+import { isOptions, replacePathParams, stringifyQueries } from "./utilities";
 
 describe("replacePathParams", () => {
   it("パスパラメータがない場合は元のパスを返すこと", () => {
@@ -193,5 +193,20 @@ describe("stringifyQueries", () => {
 
       expect(result).toBe(expectedQueryString);
     });
+  });
+});
+
+describe("isOptions", () => {
+  it("Options に含まれるキーの場合 true を返すこと", () => {
+    expect(isOptions("params")).toBe(true);
+    expect(isOptions("queries")).toBe(true);
+    expect(isOptions("hash")).toBe(true);
+  });
+
+  it("Options に含まれないキーの場合 false を返すこと", () => {
+    expect(isOptions("get")).toBe(false);
+    expect(isOptions("post")).toBe(false);
+    expect(isOptions("put")).toBe(false);
+    expect(isOptions("delete")).toBe(false);
   });
 });

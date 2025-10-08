@@ -101,7 +101,8 @@ Conversely, routopia might be a good match for the following cases:
 - [Query Parameters](#query-parameters)
 - [Hash](#hash)
 - [Base URL](#base-url)
-- [Best Practices](#best-practices)
+- [Shorthand](#shorthand)
+- [Best Practice](#best-practice)
 
 ### No Parameters
 
@@ -329,7 +330,43 @@ myApiRoutes["/path"].get();
 // => "https://api.example.com/path"
 ```
 
-### Best Practices
+### Shorthand
+
+- You can directly define parameters by omitting the HTTP method definition.
+- In this case, it is equivalent to defining the GET method.
+
+```ts
+import { routes, empty, type } from 'routopia';
+
+const myRoutes = routes({
+  "/short": empty,
+  // = "/short": { get: empty }
+  
+  "/short/[param]": {
+    params: {
+      param: type as string,
+    },
+    queries: {
+      q: type as string | undefined,
+    },
+    hash: type as string,
+  },
+  // = "/short/[param]": { get: { params: {...}, queries: {...}, hash: ... } }
+});
+
+// Use it by calling the `get` method
+myRoutes["/short"].get();
+// => "/short"
+
+myRoutes["/short/[param]"].get({ 
+  params: { param: "abc" }, 
+  queries: { q: "query" }, 
+  hash: "anchor",
+});
+// => "/short/abc?q=query#anchor"
+```
+
+### Best Practice
 
 - Create an anti-corruption layer by wrapping `routopia`.
 - It's also possible to specify the Base URL collectively.
