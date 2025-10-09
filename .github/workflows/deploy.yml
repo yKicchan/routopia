@@ -19,7 +19,7 @@ jobs:
       - name: Generate test coverage
         run: pnpm run coverage
       - name: Make coverage badge
-        run: pnpm run make-coverage-badge
+        run: pnpm run coverage:badge
       - name: Generate directory listing
         uses: yKicchan/generate-directory-listing-action@5394a35a894df73f47e6f6925cbab737256f33a1 # v1.1.0
         with:
