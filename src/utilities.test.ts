@@ -143,8 +143,7 @@ describe("replacePathParams", () => {
 });
 
 describe("stringifyQueries", () => {
-  it("クエリパラメータがない場合は空文字を返すこと", () => {
-    const queries = {};
+  it.each([undefined, {}])("クエリパラメータがない場合は空文字を返すこと", (queries) => {
     const expectedQueryString = "";
 
     const result = stringifyQueries(queries);
