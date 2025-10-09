@@ -28,7 +28,7 @@ importers:
         version: 24.7.0
       '@vitest/coverage-v8':
         specifier: 3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/node@24.7.0)(tsx@4.19.3))
+        version: 3.2.4(vitest@3.2.4(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3))
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -43,7 +43,11 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 3.2.4
-        version: 3.2.4(@types/node@24.7.0)(tsx@4.19.3)
+        version: 3.2.4(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3)
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.52.3
+        version: 4.52.3
 
 packages:
 
@@ -567,6 +571,12 @@ packages:
 
   '@rolldown/pluginutils@1.0.0-beta.9-commit.d91dfb5':
     resolution: {integrity: sha512-8sExkWRK+zVybw3+2/kBkYBFeLnEUWz1fT7BLHplpzmtqkOfTbAQ9gkt4pzwGIIZmg4Qn5US5ACjUBenrhezwQ==}
+
+  '@rollup/rollup-linux-x64-gnu@4.52.3':
+    resolution: {integrity: sha512-tPgGd6bY2M2LJTA1uGq8fkSPK8ZLYjDjY+ZLK9WHncCnfIz29LIXIqUgzCR0hIefzy6Hpbe8Th5WOSwTM8E7LA==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -2210,6 +2220,9 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.0-beta.9-commit.d91dfb5': {}
 
+  '@rollup/rollup-linux-x64-gnu@4.52.3':
+    optional: true
+
   '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
@@ -2233,7 +2246,7 @@ snapshots:
     dependencies:
       undici-types: 7.14.0
 
-  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@24.7.0)(tsx@4.19.3))':
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -2248,7 +2261,7 @@ snapshots:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@24.7.0)(tsx@4.19.3)
+      vitest: 3.2.4(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -2260,13 +2273,13 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.4(vite@7.1.9(@types/node@24.7.0)(tsx@4.19.3))':
+  '@vitest/mocker@3.2.4(vite@7.1.9(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.19
     optionalDependencies:
-      vite: 7.1.9(@types/node@24.7.0)(tsx@4.19.3)
+      vite: 7.1.9(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -3106,13 +3119,13 @@ snapshots:
 
   universalify@0.1.2: {}
 
-  vite-node@3.2.4(@types/node@24.7.0)(tsx@4.19.3):
+  vite-node@3.2.4(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.1.9(@types/node@24.7.0)(tsx@4.19.3)
+      vite: 7.1.9(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -3127,7 +3140,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@7.1.9(@types/node@24.7.0)(tsx@4.19.3):
+  vite@7.1.9(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3):
     dependencies:
       esbuild: 0.25.10
       fdir: 6.5.0(picomatch@4.0.3)
@@ -3138,13 +3151,14 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.7.0
       fsevents: 2.3.3
+      jiti: 2.6.1
       tsx: 4.19.3
 
-  vitest@3.2.4(@types/node@24.7.0)(tsx@4.19.3):
+  vitest@3.2.4(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@7.1.9(@types/node@24.7.0)(tsx@4.19.3))
+      '@vitest/mocker': 3.2.4(vite@7.1.9(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
@@ -3162,8 +3176,8 @@ snapshots:
       tinyglobby: 0.2.15
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.1.9(@types/node@24.7.0)(tsx@4.19.3)
-      vite-node: 3.2.4(@types/node@24.7.0)(tsx@4.19.3)
+      vite: 7.1.9(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3)
+      vite-node: 3.2.4(@types/node@24.7.0)(jiti@2.6.1)(tsx@4.19.3)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.7.0
