@@ -33,7 +33,7 @@ npm install routopia
 ```ts
 import { routes, empty, type } from 'routopia';
 
-const myRoutes = routes({
+export const myRoutes = routes({
   "/users": {
     get: empty,
     post: empty,
@@ -54,6 +54,8 @@ const myRoutes = routes({
 ### 3. Use Routes
 
 ```ts
+import { myRoutes } from './path/to/myRoutes';
+
 myRoutes["/users"].get();
 myRoutes["/users"].post();
 // => "/users"
@@ -158,6 +160,10 @@ const myRoutes = routes({
 myRoutes["/path/[id]"].get({ params: { id: 123 } });
 // => "/path/123"
 
+myRoutes["/path/[id]"].get({ params: { id: "abc" } });
+//                                         ^^^^^
+// エラー: number 型に string は割り当てられません
+
 myRoutes["/path/[param1]/[param2]"].get({ 
   params: { param1: "abc", param2: 123 },
 });
@@ -200,6 +206,10 @@ myRoutes["/path/[...slug]"].get({
 });
 // => "/path/abc/def"
 
+myRoutes["/path/[...slug]"].get();
+//                          ^^^^
+// エラー: 可変長なパスパラメータは呼び出し時省略不可
+
 myRoutes["/path/[[...slug]]"].get({ 
   params: { slug: [123, 456] },
 });
@@ -207,6 +217,7 @@ myRoutes["/path/[[...slug]]"].get({
 
 myRoutes["/path/[[...slug]]"].get();
 // => "/path"
+// Optional な可変長なパスパラメータは呼び出し時省略可能
 ```
 
 ### Query Parameters
@@ -364,13 +375,60 @@ myRoutes["/short/[param]"].get({
 // => "/short/abc?q=query#anchor"
 ```
 
+> [!WARNING]
+> Shorthand を利用する場合、同一エンドポイント内で他の HTTP メソッド定義と併用はできないよう型レベルで制限しています。  
+> 他のエンドポイントとは併記可能ですが、定義ファイルを分割するなどして同一ドメイン内での表記揺れは防止しましょう。
+> 
+> <details>
+> <summary>HTTP メソッド定義と Shorthand の併用に関する実装例</summary>
+>
+> ```ts
+> import { routes, empty, type } from 'routopia';
+> 
+> // ❌: 同一エンドポイント内は Shorthand 記法と他のメソッド定義の併用不可
+> const error = routes({
+>   "/short/mixed": {
+>     queries: { q: type as string },
+>     post: empty,
+> //  ^^^^^^^^^^^
+>   },
+> });
+> 
+> // ⚠️: 別エンドポイントなら併用可能だが、表記揺れの原因になる
+> const notGood = routes({
+>   "/hoge": empty,
+> //   :
+>   "/foo": { get: empty },
+> });
+> 
+> // ✅: 同一ファイル内はエンドポイント間で表記を統一する
+> const good = routes({
+>   "/hoge": { get: empty },
+> //  :
+>   "/foo": { get: empty },
+> });
+> 
+> // ✅: または定義ファイルを分割し、ドメインごとに表記を統一する
+> // hoge.ts
+> const hogeRoutes = routes({
+>   "/hoge": empty,
+> });
+> // foo.ts
+> const fooRoutes = routes({
+>   "/foo": { get: empty },
+> });
+> ```
+> </details>
+
 ### Best practice
 
-- `routopia` をラップしておくことで腐敗防止層を作成する
+- `routopia` をラップして最低限の腐敗防止層を作成しておく
 - また一括で Base URL を指定することも可能
 - ラップする際の引数の型には `ExpectedSchema` をジェネリクスで利用する
+- 必要に応じてドメインごとに定義ファイルを分割して肥大化を防止する
 
 ```ts
+// createMyApiRoutes.ts
 import { routes, empty, type, ExpectedSchema } from 'routopia';
 
 const API_BASE_URL = "https://api.example.com";
@@ -383,25 +441,68 @@ export const schema = { empty, type };
 ```
 
 ```ts
+// userRoutes.ts
 import { createMyApiRoutes, schema } from './path/to/createMyApiRoutes';
 
 export const userRoutes = createMyApiRoutes({
-  "/users": {
-    get: schema.empty,
-  },
+  "/users": schema.empty,
   "/users/[id]": {
-    get: {
-      params: {
-        id: schema.type as number,
-      },
+    params: {
+      id: schema.type as number,
     },
   },
 });
 ```
 
 ```ts
+// postRoutes.ts
+import { createMyApiRoutes, schema } from './path/to/createMyApiRoutes';
+
+export const postRoutes = createMyApiRoutes({
+  "/posts": {
+    get: { queries: { q: schema.type as string | undefined } },
+  },
+  "/posts/[id]": {
+    get: { params: { id: schema.type as number } },
+    post: { params: { id: schema.type as number } },
+    put: { params: { id: schema.type as number } },
+    delete: { params: { id: schema.type as number } },
+  },
+});
+```
+
+```ts
+// 利用側
 import { userRoutes } from './path/to/userRoutes';
+import { postRoutes } from './path/to/postRoutes';
 
 userRoutes["/users"].get();
 // => "https://api.example.com/users"
+
+postRoutes["/posts/[id]"].get({ params: { id: 123 } });
+// => "https://api.example.com/posts/123"
 ```
+
+> [!WARNING]
+> 利便性のために複数のルート定義をまとめるのも可能ですが、TreeShaking が効かなくなるため注意してください
+> 
+> <details>
+> <summary>TreeShaking が効かなくなる実装例</summary>
+>
+> ```ts
+> // index.ts
+> import { userRoutes } from './path/to/userRoutes';
+> import { postRoutes } from './path/to/postRoutes';
+> 
+> export const apiRoutes = {
+>   ...userRoutes,
+>   ...postRoutes,
+> };
+> 
+> // 利用側
+> import { apiRoutes } from './path/to/index';
+> apiRoutes["/users"].get();
+> apiRoutes["/posts/[id]"].get({ params: { id: 123 } });
+> // すべてのルートを一律で検索できるが、バンドルサイズは増大する
+> ```
+> </details>

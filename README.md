@@ -33,7 +33,7 @@ npm install routopia
 ```ts
 import { routes, empty, type } from 'routopia';
 
-const myRoutes = routes({
+export const myRoutes = routes({
   "/users": {
     get: empty,
     post: empty,
@@ -54,6 +54,8 @@ const myRoutes = routes({
 ### 3. Use Routes
 
 ```ts
+import { myRoutes } from './path/to/myRoutes';
+
 myRoutes["/users"].get();
 myRoutes["/users"].post();
 // => "/users"
@@ -78,7 +80,7 @@ Provides type-safe route definitions including path parameters and query paramet
 The main differences from other libraries are as follows:
 
 - Autocomplete works during definition.
-- Autocomplete helps you find and filter paths during usage.
+- Autocomplete guides you to the correct path during usage.
 - Detailed inference is obtained through template literal types.
 
 routopia focuses on declaratively and simply getting type-safe URLs.
@@ -102,7 +104,7 @@ Conversely, routopia might be a good match for the following cases:
 - [Hash](#hash)
 - [Base URL](#base-url)
 - [Shorthand](#shorthand)
-- [Best Practice](#best-practice)
+- [Best Practices](#best-practices)
 
 ### No Parameters
 
@@ -124,7 +126,7 @@ myRoutes["/path"].get();
 myRoutes["/path"].post();
 myRoutes["/path"].put();
 myRoutes["/path"].delete();
-// => All result in "/path"
+// => All resolve to "/path"
 ```
 
 ### Path Parameters
@@ -159,6 +161,10 @@ const myRoutes = routes({
 
 myRoutes["/path/[id]"].get({ params: { id: 123 } });
 // => "/path/123"
+
+myRoutes["/path/[id]"].get({ params: { id: "abc" } });
+//                                         ^^^^^
+// Error: Type 'string' is not assignable to type 'number'
 
 myRoutes["/path/[param1]/[param2]"].get({
   params: { param1: "abc", param2: 123 },
@@ -202,6 +208,11 @@ myRoutes["/path/[...slug]"].get({
 });
 // => "/path/abc/def"
 
+
+myRoutes["/path/[...slug]"].get();
+//                          ^^^^
+// Error: Catch-all parameters cannot be omitted when called.
+
 myRoutes["/path/[[...slug]]"].get({
   params: { slug: [123, 456] },
 });
@@ -209,6 +220,7 @@ myRoutes["/path/[[...slug]]"].get({
 
 myRoutes["/path/[[...slug]]"].get();
 // => "/path"
+// Optional Catch-all parameters can be omitted when called.
 ```
 
 ### Query Parameters
@@ -256,7 +268,7 @@ myRoutes["/required"].get({
 
 myRoutes["/required"].get();
 //                    ^^^
-// Error: Cannot be omitted if there are non-optional query parameters.
+// Error: Cannot be omitted if there are required query parameters.
 
 myRoutes["/optional"].get();
 // => "/optional"
@@ -306,7 +318,7 @@ myRoutes["/path"].get();
 
 - The routes function can accept a string as the first argument to specify a Base URL.
 - In that case, specify the schema definition as the second argument.
-- Note that the Base URL is simply concatenated.
+- Note that the Base URL is simply prefixed.
 
 ```ts
 import { routes, empty } from 'routopia';
@@ -366,13 +378,60 @@ myRoutes["/short/[param]"].get({
 // => "/short/abc?q=query#anchor"
 ```
 
-### Best Practice
+> [!WARNING]
+> When using Shorthand, you cannot combine it with other HTTP method definitions within the same endpoint.  
+> While it's possible to use them together across different endpoints, you should split definition files to prevent notation inconsistencies within the same domain.
+> 
+> <details>
+> <summary>Examples of Mixing HTTP method definitions and Shorthand</summary>
+> 
+> ```ts
+> import { routes, empty, type } from 'routopia';
+> 
+> // ❌: Cannot combine Shorthand notation with other method definitions within the same endpoint
+> const error = routes({
+>   "/short/mixed": {
+>     queries: { q: type as string },
+>     post: empty,
+> //  ^^^^^^^^^^^
+>   },
+> });
+> 
+> // ⚠️: Can be used together across different endpoints, but causes notation inconsistencies
+> const notGood = routes({
+>   "/hoge": empty,
+> //   :
+>   "/foo": { get: empty },
+> });
+> 
+> // ✅: Unify notation between endpoints within the same file
+> const good = routes({
+>   "/hoge": { get: empty },
+> //  :
+>   "/foo": { get: empty },
+> });
+> 
+> // ✅: Or split definition files and unify notation by domain
+> // hoge.ts
+> const hogeRoutes = routes({
+>   "/hoge": empty,
+> });
+> // foo.ts
+> const fooRoutes = routes({
+>   "/foo": { get: empty },
+> });
+> ```
+> </details>
 
-- Create an anti-corruption layer by wrapping `routopia`.
+### Best Practices
+
+- Create an abstraction layer by wrapping `routopia`.
 - It's also possible to specify the Base URL collectively.
 - Use `ExpectedSchema` with generics for the argument type when wrapping.
+- Split definition files by domain as needed to prevent them from becoming too large
 
 ```ts
+// createMyApiRoutes.ts
 import { routes, empty, type, ExpectedSchema } from 'routopia';
 
 const API_BASE_URL = "https://api.example.com";
@@ -385,25 +444,68 @@ export const schema = { empty, type };
 ```
 
 ```ts
+// userRoutes.ts
 import { createMyApiRoutes, schema } from './path/to/createMyApiRoutes';
 
 export const userRoutes = createMyApiRoutes({
-  "/users": {
-    get: schema.empty,
-  },
+  "/users": schema.empty,
   "/users/[id]": {
-    get: {
-      params: {
-        id: schema.type as number,
-      },
+    params: {
+      id: schema.type as number,
     },
   },
 });
 ```
 
 ```ts
+// postRoutes.ts
+import { createMyApiRoutes, schema } from './path/to/createMyApiRoutes';
+
+export const postRoutes = createMyApiRoutes({
+  "/posts": {
+    get: { queries: { q: schema.type as string | undefined } },
+  },
+  "/posts/[id]": {
+    get: { params: { id: schema.type as number } },
+    post: { params: { id: schema.type as number } },
+    put: { params: { id: schema.type as number } },
+    delete: { params: { id: schema.type as number } },
+  },
+});
+```
+
+```ts
+// Example Usage
 import { userRoutes } from './path/to/userRoutes';
+import { postRoutes } from './path/to/postRoutes';
 
 userRoutes["/users"].get();
 // => "https://api.example.com/users"
+
+postRoutes["/posts/[id]"].get({ params: { id: 123 } });
+// => "https://api.example.com/posts/123"
 ```
+
+> [!WARNING]
+> For convenience, it's possible to combine multiple route definitions as shown below, but be careful as TreeShaking will not work effectively
+> 
+> <details>
+> <summary>Example of TreeShaking not working effectively</summary>
+>
+> ```ts
+> // index.ts
+> import { userRoutes } from './path/to/userRoutes';
+> import { postRoutes } from './path/to/postRoutes';
+> 
+> export const apiRoutes = {
+>   ...userRoutes,
+>   ...postRoutes,
+> };
+> 
+> // Example Usage
+> import { apiRoutes } from './path/to/index';
+> apiRoutes["/users"].get();
+> apiRoutes["/posts/[id]"].get({ params: { id: 123 } });
+> // You can search all routes uniformly, but the bundle size will increase
+> ```
+> </details>
