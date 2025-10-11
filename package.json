@@ -39,7 +39,7 @@
     "coverage:badge": "make-coverage-badge --report-path=./artifacts/coverage/coverage-summary.json --output-path=./artifacts/coverage/badge.svg",
     "check": "tsc --noEmit && biome check",
     "fix": "tsc --noEmit && biome check --write",
-    "release": "pnpm build && pnpm publish --provenance --no-git-checks --access public"
+    "release": "pnpm build && changeset publish"
   },
   "keywords": [
     "typescript",
