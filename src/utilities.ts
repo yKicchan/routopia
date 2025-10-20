@@ -43,7 +43,7 @@ export function replacePathParams(path: string, params: Options["params"]): stri
     .filter((segment) => segment !== "")
     .join("/");
 
-  return `/${realPath}`;
+  return path.startsWith("/") ? `/${realPath}` : realPath;
 }
 
 /**
@@ -78,4 +78,37 @@ export function stringifyQueries(queries: Options["queries"]): string {
 export function isOptions(key: string): key is keyof Options {
   const optionsKeys: (keyof Options)[] = ["params", "queries", "hash"];
   return optionsKeys.includes(key as (typeof optionsKeys)[number]);
+}
+
+const schemaSeparator = "://";
+
+/**
+ * Extracts the schema from a given path if present.
+ *
+ * @param target - The target path which may include a schema (e.g., "schema://path/to/resource").
+ * @returns An object containing the extracted schema (if any) and the remaining path.
+ */
+export function extractSchemaFromPath(target: string): {
+  schema?: string;
+  pathWithoutSchema: string;
+} {
+  if (!target.includes(schemaSeparator)) return { pathWithoutSchema: target };
+
+  const [schema, path] = target.split(schemaSeparator);
+  return {
+    schema,
+    pathWithoutSchema: path,
+  };
+}
+
+/**
+ * Joins the schema and path back together.
+ *
+ * @param schema - The schema to prepend.
+ * @param path - The path to append.
+ * @returns The combined schema and path by `://` separator.
+ */
+export function joinSchemaToPath(schema: ReturnType<typeof extractSchemaFromPath>["schema"], path: string) {
+  if (!schema) return path;
+  return `${schema}${schemaSeparator}${path}`;
 }

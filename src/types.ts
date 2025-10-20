@@ -254,7 +254,7 @@ type JoinParams<T extends ReadonlyArray<unknown>> = T extends readonly [
     : never;
 
 /**
- * Utility type that trims double slashes and trailing slash from a path string
+ * Utility type that trims multiple slashes from a path string
  *
  * @example
  * TrimPath<"/path//to//resource/">
@@ -390,12 +390,19 @@ type ExpectedPath<
  * ActualReturn<"/path", { queries: { q: string } }>
  * // `/path?${string}`
  */
-type ActualReturn<Path extends string, Options> = ExpectedPath<
-  Path,
-  Options extends { params: infer Params extends Optional<ExtractParams<Path>> } ? Params : undefined,
-  Options extends { queries?: infer Queries extends Nullable<SchemaQueries> } ? Queries : undefined,
-  Options extends { hash: infer Hash extends string } ? Hash : undefined
->;
+type ActualReturn<Endpoint extends string, Options> = Endpoint extends `${infer Schema}://${infer Path}`
+  ? `${Schema}://${ExpectedPath<
+      Path,
+      Options extends { params: infer Params extends Optional<ExtractParams<Path>> } ? Params : undefined,
+      Options extends { queries?: infer Queries extends Nullable<SchemaQueries> } ? Queries : undefined,
+      Options extends { hash: infer Hash extends string } ? Hash : undefined
+    >}`
+  : ExpectedPath<
+      Endpoint,
+      Options extends { params: infer Params extends Optional<ExtractParams<Endpoint>> } ? Params : undefined,
+      Options extends { queries?: infer Queries extends Nullable<SchemaQueries> } ? Queries : undefined,
+      Options extends { hash: infer Hash extends string } ? Hash : undefined
+    >;
 
 /**
  * Alias for methods with no parameters
