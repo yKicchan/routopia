@@ -1,5 +1,22 @@
 # routopia
 
+## 1.1.0
+
+### Minor Changes
+
+- [#4](https://github.com/yKicchan/routopia/pull/4) [`c6905e5`](https://github.com/yKicchan/routopia/commit/c6905e54f59460004fd58818a404bc8d2a64a493) Thanks [@yKicchan](https://github.com/yKicchan)! - Add custom schema support for endpoints
+
+  Endpoints can now include custom schemas (e.g., `custom://path/to/resource`) which are properly preserved during URL generation.
+
+### Patch Changes
+
+- [#3](https://github.com/yKicchan/routopia/pull/3) [`3fe96a1`](https://github.com/yKicchan/routopia/commit/3fe96a1b7ea4db96506bda31c24abff100973f5d) Thanks [@yKicchan](https://github.com/yKicchan)! - Fix type inference for catch-all parameters without 'as const'
+
+  Previously, catch-all parameters ([...params]) were incorrectly ignored during type inference when not using 'as const', causing the parameter segments to be omitted from the return type. Now:
+
+  - `myRoutes["/params/[...params]"].get({ params: ["1"] })` correctly returns `/params/${string}` instead of `/params`
+  - `myRoutes["/params/[...params]"].get({ params: ["1"] as const })` continues to return `/params/1`
+
 ## 1.0.0
 
 ### Major Changes
