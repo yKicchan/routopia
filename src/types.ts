@@ -249,7 +249,9 @@ type JoinParams<T extends ReadonlyArray<unknown>> = T extends readonly [
   ? Tail["length"] extends 0
     ? Head
     : `${Head}/${JoinParams<Tail>}`
-  : "";
+  : T extends Extract<SchemaParam, ReadonlyArray<unknown>>
+    ? T[number]
+    : never;
 
 /**
  * Utility type that trims double slashes and trailing slash from a path string
