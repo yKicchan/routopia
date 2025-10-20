@@ -1,3 +1,4 @@
+import { describe } from "vitest";
 import schema from ".";
 import { stringifyQueries } from "./utilities";
 
@@ -107,13 +108,14 @@ describe("routes", () => {
 
   it("各エンドポイントに対応するオブジェクトが生成されること", () => {
     expect(routes).toHaveProperty("/methods");
-    expect(routes).toHaveProperty(["/params/[param]"]);
-    expect(routes).toHaveProperty(["/params/[param1]/[param2]"]);
+    expect(routes).toHaveProperty("/params/[param]");
+    expect(routes).toHaveProperty("/params/[param1]/[param2]");
     expect(routes).toHaveProperty("/queries/required");
     expect(routes).toHaveProperty("/queries/both");
     expect(routes).toHaveProperty("/queries/optional");
     expect(routes).toHaveProperty("/hash");
-    expect(routes).toHaveProperty(["/all/[param]"]);
+    expect(routes).toHaveProperty("/all/[param]");
+
     expect(routes).toHaveProperty("/short/empty");
     expect(routes).toHaveProperty("/short/all/[param]");
     expect(routes).toHaveProperty("/short/all/[[...params]]");
@@ -321,35 +323,6 @@ describe("routes", () => {
     });
   });
 
-  it("baseUrl がついた URL を生成できること", () => {
-    const baseUrl = "https://example.com/api";
-    const routes = schema.routes(baseUrl, {
-      "/path/[param]": {
-        get: {
-          params: {
-            param: schema.type as string,
-          },
-          queries: {
-            q: schema.type as string,
-          },
-          hash: schema.type as string,
-        },
-      },
-    });
-    const expectedParams = { param: "1" };
-    const expectedQueries = { q: "query" };
-    const expectedHash = "hash";
-    const expectedUrl = `${baseUrl}/path/${expectedParams.param}?${stringifyQueries(expectedQueries)}#${expectedHash}`;
-
-    const url = routes["/path/[param]"].get({
-      params: expectedParams,
-      queries: expectedQueries,
-      hash: expectedHash,
-    });
-
-    expect(url).toBe(expectedUrl);
-  });
-
   describe("ショートハンド宣言(HttpMethod が省略されているとき)の場合", () => {
     it("引数なしで URL を生成できること", () => {
       const expectedUrl = "/short/empty";
@@ -379,6 +352,187 @@ describe("routes", () => {
       const expectedUrl = "/short/all";
 
       const url = routes["/short/all/[[...params]]"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+  });
+});
+
+describe("routes: baseUrl", () => {
+  const baseUrl = "https://example.com/api";
+  const routes = schema.routes(baseUrl, {
+    "/path/[param]": {
+      get: {
+        params: {
+          param: schema.type as string,
+        },
+        queries: {
+          q: schema.type as string,
+        },
+        hash: schema.type as string,
+      },
+    },
+  });
+
+  it("baseUrl がついた URL を生成できること", () => {
+    const expectedParams = { param: "1" };
+    const expectedQueries = { q: "query" };
+    const expectedHash = "hash";
+    const expectedUrl = `${baseUrl}/path/${expectedParams.param}?${stringifyQueries(expectedQueries)}#${expectedHash}`;
+
+    const url = routes["/path/[param]"].get({
+      params: expectedParams,
+      queries: expectedQueries,
+      hash: expectedHash,
+    });
+
+    expect(url).toBe(expectedUrl);
+  });
+});
+
+describe("routes: custom scheme", () => {
+  describe("baseUrl なし", () => {
+    const routes = schema.routes({
+      "schema://empty": schema.empty,
+      "schema://params/[param]": {
+        params: {
+          param: schema.type as string,
+        },
+      },
+      "schema://params/[...params]": {
+        params: {
+          params: schema.type as string[],
+        },
+      },
+      "schema://params/[[...params]]": {
+        params: {
+          params: schema.type as string[],
+        },
+      },
+    });
+
+    it("スラッシュが変わらずに URL を生成できること", () => {
+      const expectedUrl = "schema://empty";
+
+      const url = routes["schema://empty"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("パラメータがあってもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedParams = { param: "1" };
+      const expectedUrl = `schema://params/${expectedParams.param}`;
+
+      const url = routes["schema://params/[param]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長パラメータがあってもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedUrl = `schema://params/${expectedParams.params.join("/")}`;
+
+      const url = routes["schema://params/[...params]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長でオプショナルなパラメータがあってもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedUrl = `schema://params/${expectedParams.params.join("/")}`;
+
+      const url = routes["schema://params/[[...params]]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長でオプショナルなパラメータを省略してもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedUrl = "schema://params";
+
+      const url = routes["schema://params/[[...params]]"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+  });
+
+  describe("baseUrl あり", () => {
+    const baseUrl = "schema://";
+    const routes = schema.routes(baseUrl, {
+      empty: schema.empty,
+      "params/[param]": {
+        params: {
+          param: schema.type as string,
+        },
+      },
+      "params/[...params]": {
+        params: {
+          params: schema.type as string[],
+        },
+      },
+      "params/[[...params]]": {
+        params: {
+          params: schema.type as string[],
+        },
+      },
+    });
+
+    it("baseUrl があってもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedPath = "empty";
+      const expectedUrl = `${baseUrl}${expectedPath}`;
+
+      // biome-ignore lint/complexity/useLiteralKeys:
+      const url = routes["empty"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("パラメータがあってもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedParams = { param: "1" };
+      const expectedPath = `params/${expectedParams.param}`;
+      const expectedUrl = `${baseUrl}${expectedPath}`;
+
+      const url = routes["params/[param]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長パラメータがあってもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedPath = `params/${expectedParams.params.join("/")}`;
+      const expectedUrl = `${baseUrl}${expectedPath}`;
+
+      const url = routes["params/[...params]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長でオプショナルなパラメータがあってもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedPath = `params/${expectedParams.params.join("/")}`;
+      const expectedUrl = `${baseUrl}${expectedPath}`;
+
+      const url = routes["params/[[...params]]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長でオプショナルなパラメータを省略してもスラッシュが変わらずに URL を生成できること", () => {
+      const expectedPath = "params";
+      const expectedUrl = `${baseUrl}${expectedPath}`;
+
+      const url = routes["params/[[...params]]"].get();
 
       expect(url).toBe(expectedUrl);
     });
