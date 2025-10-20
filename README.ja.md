@@ -2,6 +2,8 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/yKicchan/routopia)](https://github.com/yKicchan/routopia/releases)
 [![license](https://img.shields.io/github/license/yKicchan/routopia)](https://github.com/yKicchan/routopia/blob/main/LICENSE)
+[![minzip](https://badgen.net/bundlephobia/minzip/routopia)](https://bundlephobia.com/package/routopia)
+[![dependencies](https://badgen.net/bundlephobia/dependency-count/routopia)](https://bundlephobia.com/package/routopia)
 [![CI](https://github.com/yKicchan/routopia/actions/workflows/ci.yml/badge.svg)](https://github.com/yKicchan/routopia/actions/workflows/ci.yml)
 [![Deploy](https://github.com/yKicchan/routopia/actions/workflows/deploy.yml/badge.svg)](https://github.com/yKicchan/routopia/actions/workflows/deploy.yml)
 [![Coverage](https://ykicchan.github.io/routopia/coverage/badge.svg)](https://ykicchan.github.io/routopia/coverage)
@@ -87,10 +89,11 @@ routopia は宣言的で型安全な簡素な URL の取得に焦点を当てて
 
 逆に下記のようなケースでは routopia がマッチしているかもしれません
 
+- サードパーティサイトのリンクや、 SDK 等が存在しないサードパーティ API のエンドポイント管理
+- カスタムスキーマを用いた URL の管理(例: `myapp://path/to/resource`)
+- 何らかの事情で Open API generator のようなエコシステムを利用していない場合
 - Next.js の Route Handlers のような機能を簡素に利用する場合
 - 簡単な内部リンクの管理や、Next.js で typedRoutes を利用する場合
-- サードパーティサイトのリンクや、 SDK 等が存在しないサードパーティ API のエンドポイント管理
-- 何らかの事情で Open API generator のようなエコシステムを利用していない場合
 - シンプルな URL ビルダーを必要とする場合
 
 ## 📖 API Reference
