@@ -391,7 +391,12 @@ type ExpectedPath<
  * // `/path?${string}`
  */
 type ActualReturn<Endpoint extends string, Options> = Endpoint extends `${infer Schema}://${infer Path}`
-  ? `${Schema}://${ActualReturn<Path, Options>}`
+  ? `${Schema}://${ExpectedPath<
+      Path,
+      Options extends { params: infer Params extends Optional<ExtractParams<Path>> } ? Params : undefined,
+      Options extends { queries?: infer Queries extends Nullable<SchemaQueries> } ? Queries : undefined,
+      Options extends { hash: infer Hash extends string } ? Hash : undefined
+    >}`
   : ExpectedPath<
       Endpoint,
       Options extends { params: infer Params extends Optional<ExtractParams<Endpoint>> } ? Params : undefined,
