@@ -2,6 +2,8 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/yKicchan/routopia)](https://github.com/yKicchan/routopia/releases)
 [![license](https://img.shields.io/github/license/yKicchan/routopia)](https://github.com/yKicchan/routopia/blob/main/LICENSE)
+[![minzip](https://badgen.net/bundlephobia/minzip/routopia)](https://bundlephobia.com/package/routopia)
+[![dependencies](https://badgen.net/bundlephobia/dependency-count/routopia)](https://bundlephobia.com/package/routopia)
 [![CI](https://github.com/yKicchan/routopia/actions/workflows/ci.yml/badge.svg)](https://github.com/yKicchan/routopia/actions/workflows/ci.yml)
 [![Deploy](https://github.com/yKicchan/routopia/actions/workflows/deploy.yml/badge.svg)](https://github.com/yKicchan/routopia/actions/workflows/deploy.yml)
 [![Coverage](https://ykicchan.github.io/routopia/coverage/badge.svg)](https://ykicchan.github.io/routopia/coverage)
@@ -89,10 +91,11 @@ If you need more advanced features like automatic generation or regular expressi
 
 Conversely, routopia might be a good match for the following cases:
 
+- When you need to handle links to external sites or third-party API endpoints without an available SDK
+- Managing URLs with custom schemas (e.g., `myapp://path/to/resource`)
+- When you're not using ecosystems like OpenAPI generators for some reason
 - When you want to simply use features like Next.js Route Handlers
 - When managing simple internal links or using typedRoutes in Next.js
-- When you need to handle links to external sites or third-party API endpoints without an available SDK
-- When you're not using ecosystems like OpenAPI generators for some reason
 - When you need a simple URL builder
 
 ## 📖 API Reference
