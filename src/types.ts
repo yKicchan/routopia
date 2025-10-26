@@ -48,11 +48,10 @@ export type Options = { params?: SchemaParams; queries?: SchemaQueries; hash?: s
  * // { params: (string | number)[] }
  *
  * ExtractParams<"/path/[[...params]]">
- * // { params: (string | number)[] | undefined }
+ * // { params: (string | number)[] }
  */
 type ExtractParams<Endpoint extends string> = Endpoint extends `${infer Before}[[...${infer Param}]]${infer After}`
-  ? { [K in Param]: Extract<SchemaParam, ReadonlyArray<unknown> | undefined> } & ExtractParams<Before> &
-      ExtractParams<After>
+  ? { [K in Param]: Extract<SchemaParam, ReadonlyArray<unknown>> } & ExtractParams<Before> & ExtractParams<After>
   : Endpoint extends `${infer Before}[...${infer Param}]${infer After}`
     ? { [K in Param]: Extract<SchemaParam, ReadonlyArray<unknown>> } & ExtractParams<Before> & ExtractParams<After>
     : Endpoint extends `${string}[${infer Param}]${infer After}`
@@ -79,14 +78,14 @@ type HasParams<Endpoint extends string> = keyof ExtractParams<Endpoint> extends 
  *
  * @example
  * ExpectedOptions<"/users/[id]">
- * // { params: { id: string | number }; queries?: SchemaQueries }
+ * // { params: { id: string | number }; queries?: SchemaQueries; hash?: string }
  *
  * ExpectedOptions<"/users">
- * // { params?: never; queries?: SchemaQueries }
+ * // { queries?: SchemaQueries; hash?: string }
  */
 type ExpectedOptions<Endpoint extends string> = HasParams<Endpoint> extends true
-  ? { params: ExtractParams<Endpoint>; queries?: SchemaQueries; hash?: string }
-  : { params?: never; queries?: SchemaQueries; hash?: string };
+  ? { params: ExtractParams<Endpoint>; queries?: Simplify<SchemaQueries>; hash?: string }
+  : { queries?: Simplify<SchemaQueries>; hash?: string };
 
 /**
  * Utility type to extract only nullable properties
@@ -149,21 +148,6 @@ type Optional<T> = {
 };
 
 /**
- * Utility type that makes all properties of an object deeply optional if it has no required fields.
- *
- * @example
- * DeepOptional<{ a: { b?: string } }>
- * // { a?: { b?: string } }
- */
-type DeepOptional<T> = keyof T extends never
-  ? T
-  : {
-      [K in keyof T as HasRequired<T[K]> extends true ? K : never]: DeepOptional<T[K]>;
-    } & {
-      [K in keyof T as HasRequired<T[K]> extends false ? K : never]?: DeepOptional<T[K]>;
-    };
-
-/**
  * Utility type that makes all properties of an object readonly
  *
  * @example
@@ -174,14 +158,19 @@ type ReadonlyProperties<T> = {
   [K in keyof T]: Readonly<T[K]>;
 };
 
+// biome-ignore lint/complexity/noBannedTypes: Using empty object type for specific purpose
+type EmptyObject = {};
+
 /**
  * Converts schema definition into optional keys if it has no required fields.
  * Readonly is marked to accept as const arguments.
  * Please refer to each ActualXXXX type for more details.
  */
-type ActualOptions<Schema extends Options, Endpoint extends string> = ActualParams<Schema["params"], Endpoint> &
-  ActualQueries<Schema["queries"]> &
-  ActualHash<Schema["hash"]>;
+type ActualOptions<Schema extends Options, Endpoint extends string> = (Schema["params"] extends Options["params"]
+  ? ActualParams<Schema["params"], Endpoint>
+  : EmptyObject) &
+  (Schema["queries"] extends Options["queries"] ? ActualQueries<Schema["queries"]> : EmptyObject) &
+  (Schema["hash"] extends Options["hash"] ? ActualHash<Schema["hash"]> : EmptyObject);
 
 /**
  * Makes path parameters deeply optional if they are optional catch-all parameters.
@@ -193,15 +182,15 @@ type ActualOptions<Schema extends Options, Endpoint extends string> = ActualPara
  * ActualParams<{ param: string[] }, "/[[...param]]">
  * // { params?: { param?: string[] } }
  */
-type ActualParams<Schema extends Options["params"], Endpoint extends string> = DeepOptional<{
-  params: ReadonlyProperties<
-    {
-      [K in keyof Schema as K extends OptionalCatchAllSegments<Endpoint> ? K : never]?: Schema[K];
-    } & {
-      [K in keyof Schema as K extends OptionalCatchAllSegments<Endpoint> ? never : K]: Schema[K];
-    }
-  >;
-}>;
+type ActualParams<Schema extends Options["params"], Endpoint extends string> = {
+  [K in keyof Schema as K extends OptionalCatchAllSegments<Endpoint> ? K : never]?: Readonly<Schema[K]>;
+} & {
+  [K in keyof Schema as K extends OptionalCatchAllSegments<Endpoint> ? never : K]: Readonly<Schema[K]>;
+} extends infer R
+  ? HasRequired<R> extends true
+    ? { params: R }
+    : { params?: R }
+  : never;
 
 /**
  * Makes query parameters deeply optional if there are no required fields.
@@ -213,7 +202,11 @@ type ActualParams<Schema extends Options["params"], Endpoint extends string> = D
  * ActualQueries<{ optional1?: string; optional2?: number }>
  * // { queries?: { optional1?: readonly string; optional2?: readonly number } }
  */
-type ActualQueries<Schema extends Options["queries"]> = DeepOptional<{ queries: ReadonlyProperties<Schema> }>;
+type ActualQueries<Schema extends Options["queries"]> = Optional<ReadonlyProperties<Schema>> extends infer R
+  ? HasRequired<R> extends true
+    ? { queries: R }
+    : { queries?: R }
+  : never;
 
 /**
  * Keeps hash as is, since it's always optional in the schema definition.
@@ -421,6 +414,11 @@ export type Empty = Nullable<Record<string, never>>;
 type Exclusive<T, U> = (T & { [K in keyof U]?: never }) | (U & { [K in keyof T]?: never });
 
 /**
+ * Utility type that simplifies a type by flattening its structure
+ */
+type Simplify<T> = { [K in keyof T]: T[K] } & {};
+
+/**
  * Function type that returns a URL string based on the schema definition
  * - Accepts parameters depending on whether required fields exist
  */
@@ -429,10 +427,10 @@ type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = Op
   : OptionsSchema extends Options
     ? HasRequired<ActualOptions<OptionsSchema, Endpoint>> extends true
       ? <Options extends ActualOptions<OptionsSchema, Endpoint>>(
-          options: Options,
+          options: Simplify<Options>,
         ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
       : <Options extends ActualOptions<OptionsSchema, Endpoint>>(
-          options?: Options,
+          options?: Simplify<Options>,
         ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
     : never;
 
@@ -446,7 +444,9 @@ export type ExpectedSchema<Schema> = {
   [EndpointKey in keyof Schema]: EndpointKey extends string
     ? Schema[EndpointKey] extends Record<string, never>
       ? never
-      : Exclusive<Partial<Record<HttpMethod, ExpectedOptions<EndpointKey>>>, ExpectedOptions<EndpointKey>> | Empty
+      :
+          | Exclusive<Partial<Record<HttpMethod, ExpectedOptions<EndpointKey>>>, ExpectedOptions<EndpointKey>>
+          | (HasParams<EndpointKey> extends false ? Empty : never)
     : never;
 };
 

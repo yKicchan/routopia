@@ -1,4 +1,3 @@
-import { describe } from "vitest";
 import schema from ".";
 import { stringifyQueries } from "./utilities";
 
@@ -150,6 +149,60 @@ describe("routes", () => {
     });
   });
 
+  describe("パスパラメータが宣言されている場合", () => {
+    it("パスパラメータを指定して URL を生成できること", () => {
+      const expectedParams = { param: "1" };
+      const expectedUrl = `/params/${expectedParams.param}`;
+
+      const url = routes["/params/[param]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("複数のパスパラメータを指定して URL を生成できること", () => {
+      const expectedParams = { param1: "1", param2: "2" };
+      const expectedUrl = `/params/${expectedParams.param1}/${expectedParams.param2}`;
+
+      const url = routes["/params/[param1]/[param2]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長なパスパラメータを指定して URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedUrl = `/params/${expectedParams.params.join("/")}`;
+
+      const url = routes["/params/[...params]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長でオプショナルなパスパラメータを指定して URL を生成できること", () => {
+      const expectedParams = { params: ["1", "2"] };
+      const expectedUrl = `/params/${expectedParams.params.join("/")}`;
+
+      const url = routes["/params/[[...params]]"].get({
+        params: expectedParams,
+      });
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長なパスパラメータを省略して URL を生成できること", () => {
+      const expectedUrl = "/params";
+
+      const url = routes["/params/[[...params]]"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+  });
+
   describe("クエリパラメータが宣言されている場合", () => {
     it("クエリパラメータ付きの URL を生成できること", () => {
       const expectedPath = "/queries/required";
@@ -201,60 +254,6 @@ describe("routes", () => {
       const url = routes["/queries/optional"].get({
         queries: expectedQueries,
       });
-
-      expect(url).toBe(expectedUrl);
-    });
-  });
-
-  describe("パスパラメータが宣言されている場合", () => {
-    it("パスパラメータを指定して URL を生成できること", () => {
-      const expectedParams = { param: "1" };
-      const expectedUrl = `/params/${expectedParams.param}`;
-
-      const url = routes["/params/[param]"].get({
-        params: expectedParams,
-      });
-
-      expect(url).toBe(expectedUrl);
-    });
-
-    it("複数のパスパラメータを指定して URL を生成できること", () => {
-      const expectedParams = { param1: "1", param2: "2" };
-      const expectedUrl = `/params/${expectedParams.param1}/${expectedParams.param2}`;
-
-      const url = routes["/params/[param1]/[param2]"].get({
-        params: expectedParams,
-      });
-
-      expect(url).toBe(expectedUrl);
-    });
-
-    it("可変長なパスパラメータを指定して URL を生成できること", () => {
-      const expectedParams = { params: ["1", "2"] };
-      const expectedUrl = `/params/${expectedParams.params.join("/")}`;
-
-      const url = routes["/params/[...params]"].get({
-        params: expectedParams,
-      });
-
-      expect(url).toBe(expectedUrl);
-    });
-
-    it("可変長でオプショナルなパスパラメータを指定して URL を生成できること", () => {
-      const expectedParams = { params: ["1", "2"] };
-      const expectedUrl = `/params/${expectedParams.params.join("/")}`;
-
-      const url = routes["/params/[[...params]]"].get({
-        params: expectedParams,
-      });
-
-      expect(url).toBe(expectedUrl);
-    });
-
-    it("可変長なパスパラメータを省略して URL を生成できること", () => {
-      const expectedUrl = "/params";
-
-      const url = routes["/params/[[...params]]"].get();
 
       expect(url).toBe(expectedUrl);
     });

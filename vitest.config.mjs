@@ -7,6 +7,7 @@ export default defineConfig({
     env: {
       TZ: "Asia/Tokyo",
     },
+    typecheck: true,
     coverage: {
       reportsDirectory: "./artifacts/coverage",
       reporter: ["text", "json-summary", "html"],
