@@ -1,5 +1,5 @@
 import type { ActualSchema, Empty, ExpectedSchema, Options } from "./types";
-import { extractSchemaFromPath, isOptions, joinSchemaToPath, replacePathParams, stringifyQueries } from "./utilities";
+import { isOptions, replacePathParams, stringifyQueries } from "./utilities";
 
 /**
  * Utility used to define parameter types in parameter schemas
@@ -19,19 +19,22 @@ export const empty: Empty = undefined;
 
 /**
  * Higher-order function that returns a URL generator for an endpoint, given its parameters
+ *
  * @param endpoint - The endpoint path, which can include path parameters (e.g., "/users/[id]")
  * @param baseUrl - The base URL to prepend to the generated URL (optional)
+ * @param mocking - A flag indicating whether to generate a URL for mocking purposes, which allows missing parameters to be replaced with "*" (optional)
+ * @returns A function that takes an options object and returns a generated URL with path parameters replaced, query parameters appended, and hash fragment included as specified in the options.
+ *
  * @example
  * const getUrl = method("/users/[id]", "https://example.com/api");
  * getUrl({ params: { id: "1" }, queries: { flag: true } });
  * // => "https://example.com/api/users/1?flag=true"
  */
-function method(endpoint: string, baseUrl = "") {
+function method(endpoint: string, baseUrl = "", mocking = false) {
   return (options?: Options) => {
-    const { schema, pathWithoutSchema } = extractSchemaFromPath(endpoint);
-    const processedPath = replacePathParams(pathWithoutSchema, options?.params);
-    const path = joinSchemaToPath(schema, processedPath);
-    const queries = options?.queries ? `?${stringifyQueries(options.queries)}` : "";
+    const path = replacePathParams(endpoint, options?.params, mocking);
+    const queries =
+      options?.queries && Object.keys(options.queries).length > 0 ? `?${stringifyQueries(options.queries)}` : "";
     const hash = options?.hash ? `#${encodeURIComponent(options.hash)}` : "";
     return `${baseUrl}${path}${queries}${hash}`;
   };
@@ -43,10 +46,11 @@ function method(endpoint: string, baseUrl = "") {
  *
  * @param schema - The routes schema, defining endpoints, their associated HTTP methods (which can be omitted for the shorthand feature), and various options (e.g., path, query, and hash parameters).
  * @returns An object containing type-safe URL builders for each route and method.
+ *
  * @example
  * import { routes, type, empty } from "routopia";
  *
- * const routes = routes({
+ * const myRoutes = routes({
  *   // Example for the /users route
  *   "/users": {
  *     get: {
@@ -90,10 +94,11 @@ export function routes<Schema extends ExpectedSchema<Schema>>(schema: Schema): A
  * @param baseUrl - The base URL to prepend to the generated URLs.
  * @param schema - The routes schema, defining endpoints, their associated HTTP methods (which can be omitted for the shorthand feature), and various options (e.g., path, query, and hash parameters).
  * @returns An object containing type-safe URL builders for each route and method.
+ *
  * @example
  * import { routes, type, empty } from "routopia";
  *
- * const routes = routes("https://example.com/api", {
+ * const myRoutes = routes("https://example.com/api", {
  *   // Example for the /users route
  *   "/users": {
  *     get: {
@@ -141,12 +146,15 @@ export function routes<Schema extends ExpectedSchema<Schema>, BaseUrl extends st
   const schema = hasBaseUrl ? args[1] : args[0];
 
   return Object.entries<object | Empty>(schema).reduce((acc, [endpoint, methodsOrOptions]) => {
-    const keys = methodsOrOptions && Object.keys(methodsOrOptions);
+    const generate = (mocking = false) => method(endpoint, baseUrl, mocking);
+    const generatorWithMock = Object.assign(generate(), { mock: generate(true) });
 
+    const keys = methodsOrOptions && Object.keys(methodsOrOptions);
     if (!keys || keys.every(isOptions)) {
       return Object.assign(acc, {
         [endpoint]: {
-          get: method(endpoint, baseUrl),
+          mock: generate(true),
+          get: generatorWithMock,
         },
       });
     }
@@ -156,9 +164,11 @@ export function routes<Schema extends ExpectedSchema<Schema>, BaseUrl extends st
       [endpoint]: keys.reduce(
         (acc, httpMethod) =>
           Object.assign(acc, {
-            [httpMethod]: method(endpoint, baseUrl),
+            [httpMethod]: generatorWithMock,
           }),
-        {},
+        {
+          mock: generate(true),
+        },
       ),
     });
   }, {}) as ActualSchema<Schema, BaseUrl>;

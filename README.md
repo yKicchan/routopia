@@ -69,7 +69,7 @@ myRoutes["/path/[id]"].get({ params: { id: 123 }, queries: { q: "query" }  });
 // => "/path/123?q=query"
 ```
 
-> [!TIP]  
+> [!TIP]
 > The return value is inferred in detail by template literal types.  
 > For example, if `const path = myRoutes["/users"].get()`, the type of path will be `"/users"`.  
 > If you want to receive it as a string type, please add a type annotation:  
@@ -107,7 +107,8 @@ Conversely, routopia might be a good match for the following cases:
 - [Hash](#hash)
 - [Base URL](#base-url)
 - [Shorthand](#shorthand)
-- [Best Practices](#best-practices)
+- [Best Practice](#best-practice)
+- [Testing](#testing)
 
 ### No Parameters
 
@@ -137,8 +138,8 @@ myRoutes["/path"].delete();
 - Enclose with `[]` like `[param]`.
 - Multiple path parameters can also be specified.
 - Path parameters are defined within the `params` object.
-- Specify the `type` of path parameters using type assertion (`type as {Type}` or `<{Type}>type`) with the dedicated type object.
 - The type of path parameters can be specified satisfying `string | number`.
+- Specify the `type` of path parameters using type assertion (`type as {Type}` or `<{Type}>type`) with the dedicated type object (the same applies to other parameters).
 
 ```ts
 import { routes, type } from 'routopia';
@@ -230,6 +231,7 @@ myRoutes["/path/[[...slug]]"].get();
 
 - Query parameters are defined within the `queries` object.
 - Types other than `object` can be specified for query parameters.
+  - `string`, `number`, `boolean`, arrays, etc.
 - Including `undefined` makes them optional (omittable).
 
 ```ts
@@ -386,7 +388,7 @@ myRoutes["/short/[param]"].get({
 > While it's possible to use them together across different endpoints, you should split definition files to prevent notation inconsistencies within the same domain.
 > 
 > <details>
-> <summary>Examples of Mixing HTTP method definitions and Shorthand</summary>
+ > <summary>Examples of combining HTTP method definitions and Shorthand</summary>
 > 
 > ```ts
 > import { routes, empty, type } from 'routopia';
@@ -426,7 +428,7 @@ myRoutes["/short/[param]"].get({
 > ```
 > </details>
 
-### Best Practices
+### Best Practice
 
 - Create an abstraction layer by wrapping `routopia`.
 - It's also possible to specify the Base URL collectively.
@@ -478,7 +480,7 @@ export const postRoutes = createMyApiRoutes({
 ```
 
 ```ts
-// Example Usage
+// Usage
 import { userRoutes } from './path/to/userRoutes';
 import { postRoutes } from './path/to/postRoutes';
 
@@ -505,10 +507,123 @@ postRoutes["/posts/[id]"].get({ params: { id: 123 } });
 >   ...postRoutes,
 > };
 > 
-> // Example Usage
+> // Usage
 > import { apiRoutes } from './path/to/index';
 > apiRoutes["/users"].get();
 > apiRoutes["/posts/[id]"].get({ params: { id: 123 } });
 > // You can search all routes uniformly, but the bundle size will increase
 > ```
 > </details>
+
+### Testing
+
+When using mock servers such as MSW, you can use `routopia` as-is to build URLs for testing.  
+For flexible URL construction in tests, **a special `mock` method is provided that relaxes the type constraints of each defined parameter**.
+
+- The `mock` method can be called directly under each endpoint and under each HTTP method definition.
+- The `mock` method directly under an endpoint inherits parameters from all HTTP method definitions.
+- The `mock` method under an HTTP method inherits only that HTTP method's parameters.
+- The types that can be specified for each parameter in the `mock` method's arguments are the same range as those available during definition:
+  - [Path parameters accept values satisfying `string` | `number`](#path-parameters)
+  - [Catch-all parameters accept values satisfying `string[] | number[]`](#catch-all-parameters)
+  - [Query parameters accept values satisfying anything other than `object`](#query-parameters)
+  - [Hash parameters accept values satisfying `string`](#hash)
+- All arguments of the `mock` method are optional.
+  - If path parameter specification is omitted, `*` is automatically set.
+
+```ts
+import { routes, type } from 'routopia';
+
+const myRoutes = routes({
+  "/path/[num]": {
+    params: { num: type as number },
+    queries: {
+      req: type as string,
+      opt: type as number | undefined
+    }
+  }
+});
+
+myRoutes["/path/[num]"].mock()
+myRoutes["/path/[num]"].get.mock()
+// => "/path/*"
+
+myRoutes["/path/[num]"].mock({ params: { num: "abc" }, queries: { opt: "q" } })
+myRoutes["/path/[num]"].get.mock({ params: { num: "abc" }, queries: { opt: "q" } })
+// => "/path/abc?opt=q"
+
+Parameters<(typeof myRoutes)["/path/[num]"]["mock"]>
+Parameters<(typeof myRoutes)["/path/[num]"]["get"]["mock"]>
+// ^? [{
+//   params?: { num?: string | number } };
+//   queries?: {
+//     req?: string | number | boolean | string[]...;
+//     opt?: string | number | boolean | string[]...;
+//   };
+// }]
+```
+
+<details>
+<summary>More Examples</summary>
+
+```ts
+import { routes, type } from 'routopia';
+
+const myRoutes = routes({
+  "/path/[...strArr]": {
+    params: { strArr: type as string[] }
+  }
+});
+
+Parameters<(typeof myRoutes)["/path/[...strArr]"]["mock"]>
+Parameters<(typeof myRoutes)["/path/[...strArr]"]["get"]["mock"]>
+// ^? [{ params?: { strArr?: string[] | number[] } }]
+```
+
+```ts
+import { routes, type } from 'routopia';
+
+const myRoutes = routes({
+  "/path": {
+    get: {
+      queries: {
+        a: type as string,
+        b: type as string
+      }
+    },
+    post: {
+      queries: {
+        b: type as number,
+        c: type as number
+      }
+    }
+  }
+});
+
+Parameters<(typeof myRoutes)["/path"]["mock"]>
+// ^? [{
+//   queries?: {
+//     a?: string | number | boolean | string[]...;
+//     b?: string | number | boolean | string[]...;
+//     c?: string | number | boolean | string[]...;
+//   }
+// }]
+
+Parameters<(typeof myRoutes)["/path"]["get"]["mock"]>
+// ^? [{
+//   queries?: {
+//     a?: string | number | boolean | string[]...;
+//     b?: string | number | boolean | string[]...;
+//   }
+// }]
+
+Parameters<(typeof myRoutes)["/path"]["post"]["mock"]>
+// ^? [{
+//   queries?: {
+//     b?: string | number | boolean | string[]...;
+//     c?: string | number | boolean | string[]...;
+//   }
+// }]
+```
+</details>
+
