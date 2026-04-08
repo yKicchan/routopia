@@ -5,6 +5,7 @@ import type { Options } from "./types";
  *
  * @param path - The endpoint path, which can include path parameters. (e.g., "/users/[id]")
  * @param params - An object containing the values for the path parameters. (e.g., { id: "1" })
+ * @param mocking - A boolean indicating whether to allow missing parameters for mocking purposes. If true, missing parameters will be replaced with "*".
  *
  * @throws Error - Will throw an error if a required parameter is missing or if the parameter type is incorrect.
  * @returns The path with encoded path parameters replaced with actual values. (e.g., "/users/1")
@@ -16,34 +17,32 @@ import type { Options } from "./types";
  * replacePathParams("/posts/[[...slug]]", { slug: ["hoge", "fuga"] });
  * // => "/posts/hoge/fuga"
  */
-export function replacePathParams(path: string, params: Options["params"]): string {
-  const realPath = path
-    .split("/")
-    .map((segment) =>
-      segment
-        .replace(/^\[\[\.\.\.(.+)]]$/, (_, key) => {
-          if (!params?.[key]) return "";
-          const values = params[key];
-          if (!Array.isArray(values)) throw new Error(`"${key}" must be an array`);
-          return values.map(encodeURIComponent).join("/");
-        })
-        .replace(/^\[\.\.\.(.+)]$/, (_, key) => {
-          if (!params?.[key]) throw new Error(`"${key}" is required`);
-          const values = params[key];
-          if (!Array.isArray(values)) throw new Error(`"${key}" must be an array`);
-          return values.map(encodeURIComponent).join("/");
-        })
-        .replace(/^\[(.+)]$/, (_, key) => {
-          if (!params?.[key]) throw new Error(`"${key}" is required`);
-          const value = params[key];
-          if (Array.isArray(value)) throw new Error(`"${key}" must be not an array`);
-          return encodeURIComponent(String(value));
-        }),
-    )
-    .filter((segment) => segment !== "")
-    .join("/");
-
-  return path.startsWith("/") ? `/${realPath}` : realPath;
+export function replacePathParams(path: string, params: Options["params"], mocking = false): string {
+  return path
+    .replace(/\/\[\[\.\.\.(.+?)]]/g, (_, key) => {
+      // 1. /[[...slug]] - Optional Catch-all Parameters
+      const values = params?.[key];
+      if (mocking && values === undefined) return "/*";
+      if (values === undefined) return "";
+      if (!Array.isArray(values)) throw new Error(`"${key}" must be an array`);
+      return `/${values.map(encodeURIComponent).join("/")}`;
+    })
+    .replace(/\[\.\.\.(.+?)]/g, (_, key) => {
+      // 2. [...slug] - Catch-all Parameters
+      const values = params?.[key];
+      if (mocking && values === undefined) return "*";
+      if (values === undefined) throw new Error(`"${key}" is required`);
+      if (!Array.isArray(values)) throw new Error(`"${key}" must be an array`);
+      return values.map(encodeURIComponent).join("/");
+    })
+    .replace(/\[(.+?)]/g, (_, key) => {
+      // 3. [slug] - Path Parameter
+      const value = params?.[key];
+      if (mocking && value === undefined) return "*";
+      if (value === undefined) throw new Error(`"${key}" is required`);
+      if (Array.isArray(value)) throw new Error(`"${key}" must not be an array`);
+      return encodeURIComponent(String(value));
+    });
 }
 
 /**
@@ -78,37 +77,4 @@ export function stringifyQueries(queries: Options["queries"]): string {
 export function isOptions(key: string): key is keyof Options {
   const optionsKeys: (keyof Options)[] = ["params", "queries", "hash"];
   return optionsKeys.includes(key as (typeof optionsKeys)[number]);
-}
-
-const schemaSeparator = "://";
-
-/**
- * Extracts the schema from a given path if present.
- *
- * @param target - The target path which may include a schema (e.g., "schema://path/to/resource").
- * @returns An object containing the extracted schema (if any) and the remaining path.
- */
-export function extractSchemaFromPath(target: string): {
-  schema?: string;
-  pathWithoutSchema: string;
-} {
-  if (!target.includes(schemaSeparator)) return { pathWithoutSchema: target };
-
-  const [schema, path] = target.split(schemaSeparator);
-  return {
-    schema,
-    pathWithoutSchema: path,
-  };
-}
-
-/**
- * Joins the schema and path back together.
- *
- * @param schema - The schema to prepend.
- * @param path - The path to append.
- * @returns The combined schema and path by `://` separator.
- */
-export function joinSchemaToPath(schema: ReturnType<typeof extractSchemaFromPath>["schema"], path: string) {
-  if (!schema) return path;
-  return `${schema}${schemaSeparator}${path}`;
 }

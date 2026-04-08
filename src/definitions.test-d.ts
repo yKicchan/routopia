@@ -1,4 +1,6 @@
+import { expectTypeOf } from "vitest";
 import schema from ".";
+import type { SchemaArrayParam, SchemaPrimitiveParam, SchemaQuery } from "./types";
 
 describe("routes", () => {
   /**
@@ -323,12 +325,22 @@ describe("routes", () => {
         "/short": schema.empty,
       });
 
-      it("引数の型がないこと", () => {
+      it("引数が要求されないこと", () => {
         expectTypeOf(routes["/methods"].get).parameters.toEqualTypeOf<[]>();
         expectTypeOf(routes["/methods"].post).parameters.toEqualTypeOf<[]>();
         expectTypeOf(routes["/methods"].put).parameters.toEqualTypeOf<[]>();
         expectTypeOf(routes["/methods"].delete).parameters.toEqualTypeOf<[]>();
         expectTypeOf(routes["/short"].get).parameters.toEqualTypeOf<[]>();
+      });
+
+      it("mock 関数も引数が要求されないこと", () => {
+        expectTypeOf(routes["/methods"].mock).parameters.toEqualTypeOf<[]>();
+        expectTypeOf(routes["/methods"].get.mock).parameters.toEqualTypeOf<[]>();
+        expectTypeOf(routes["/methods"].post.mock).parameters.toEqualTypeOf<[]>();
+        expectTypeOf(routes["/methods"].put.mock).parameters.toEqualTypeOf<[]>();
+        expectTypeOf(routes["/methods"].delete.mock).parameters.toEqualTypeOf<[]>();
+        expectTypeOf(routes["/short"].mock).parameters.toEqualTypeOf<[]>();
+        expectTypeOf(routes["/short"].get.mock).parameters.toEqualTypeOf<[]>();
       });
 
       it("戻り値が詳細に推論されること", () => {
@@ -337,6 +349,16 @@ describe("routes", () => {
         expectTypeOf(routes["/methods"].put()).toEqualTypeOf<"/methods">();
         expectTypeOf(routes["/methods"].delete()).toEqualTypeOf<"/methods">();
         expectTypeOf(routes["/short"].get()).toEqualTypeOf<"/short">();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        expectTypeOf(routes["/methods"].mock()).toEqualTypeOf<"/methods">();
+        expectTypeOf(routes["/methods"].get.mock()).toEqualTypeOf<"/methods">();
+        expectTypeOf(routes["/methods"].post.mock()).toEqualTypeOf<"/methods">();
+        expectTypeOf(routes["/methods"].put.mock()).toEqualTypeOf<"/methods">();
+        expectTypeOf(routes["/methods"].delete.mock()).toEqualTypeOf<"/methods">();
+        expectTypeOf(routes["/short"].mock()).toEqualTypeOf<"/short">();
+        expectTypeOf(routes["/short"].get.mock()).toEqualTypeOf<"/short">();
       });
     });
 
@@ -357,27 +379,68 @@ describe("routes", () => {
       });
 
       it("引数が要求されること", () => {
-        expectTypeOf(routes["/methods/[param]"].get).parameters.branded.toEqualTypeOf<
-          [{ params: { param: string } }]
-        >();
+        type ExpectedType = [{ params: { param: string } }];
 
-        expectTypeOf(routes["/short/[param]"].get).parameters.branded.toEqualTypeOf<[{ params: { param: string } }]>();
+        expectTypeOf(routes["/methods/[param]"].get).parameters.branded.toEqualTypeOf<ExpectedType>();
+        expectTypeOf(routes["/short/[param]"].get).parameters.branded.toEqualTypeOf<ExpectedType>();
+      });
+
+      it("mock 関数では引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [{ params?: { param?: SchemaPrimitiveParam } }?];
+
+        // expectTypeOf(routes["/methods/[params]"].mock).parameters.branded.toEqualTypeOf の形式だと何故かテストが通らない
+        expectTypeOf<Parameters<(typeof routes)["/methods/[param]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<Parameters<(typeof routes)["/methods/[param]"]["get"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+
+        expectTypeOf<Parameters<(typeof routes)["/short/[param]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<Parameters<(typeof routes)["/short/[param]"]["get"]["mock"]>>().toEqualTypeOf<ExpectedType>();
       });
 
       it("戻り値が詳細に推論されること", () => {
-        expectTypeOf(
-          routes["/methods/[param]"].get({ params: { param: "value" } }),
-        ).toEqualTypeOf<`/methods/${string}`>();
+        const options1 = { params: { param: "value" } };
 
-        expectTypeOf(routes["/short/[param]"].get({ params: { param: "value" } })).toEqualTypeOf<`/short/${string}`>();
+        expectTypeOf(routes["/methods/[param]"].get(options1)).toEqualTypeOf<`/methods/${string}`>();
+        expectTypeOf(routes["/short/[param]"].get(options1)).toEqualTypeOf<`/short/${string}`>();
 
-        expectTypeOf(
-          routes["/methods/[param]"].get({ params: { param: "value" } } as const),
-        ).toEqualTypeOf<"/methods/value">();
+        const options2 = { params: { param: "value" } } as const;
 
-        expectTypeOf(
-          routes["/short/[param]"].get({ params: { param: "value" } } as const),
-        ).toEqualTypeOf<"/short/value">();
+        expectTypeOf(routes["/methods/[param]"].get(options2)).toEqualTypeOf<"/methods/value">();
+        expectTypeOf(routes["/short/[param]"].get(options2)).toEqualTypeOf<"/short/value">();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        expectTypeOf(routes["/methods/[param]"].mock()).toEqualTypeOf<"/methods/*">();
+        expectTypeOf(routes["/methods/[param]"].get.mock()).toEqualTypeOf<"/methods/*">();
+        expectTypeOf(routes["/short/[param]"].mock()).toEqualTypeOf<"/short/*">();
+        expectTypeOf(routes["/short/[param]"].get.mock()).toEqualTypeOf<"/short/*">();
+
+        const options1 = { params: { param: "value" } };
+
+        expectTypeOf(routes["/methods/[param]"].mock(options1)).toEqualTypeOf<`/methods/${string}`>();
+        expectTypeOf(routes["/methods/[param]"].get.mock(options1)).toEqualTypeOf<`/methods/${string}`>();
+        expectTypeOf(routes["/short/[param]"].mock(options1)).toEqualTypeOf<`/short/${string}`>();
+        expectTypeOf(routes["/short/[param]"].get.mock(options1)).toEqualTypeOf<`/short/${string}`>();
+
+        const options2 = { params: { param: 123 } };
+
+        expectTypeOf(routes["/methods/[param]"].mock(options2)).toEqualTypeOf<`/methods/${number}`>();
+        expectTypeOf(routes["/methods/[param]"].get.mock(options2)).toEqualTypeOf<`/methods/${number}`>();
+        expectTypeOf(routes["/short/[param]"].mock(options2)).toEqualTypeOf<`/short/${number}`>();
+        expectTypeOf(routes["/short/[param]"].get.mock(options2)).toEqualTypeOf<`/short/${number}`>();
+
+        const options3 = { params: { param: "value" } } as const;
+
+        expectTypeOf(routes["/methods/[param]"].mock(options3)).toEqualTypeOf<"/methods/value">();
+        expectTypeOf(routes["/methods/[param]"].get.mock(options3)).toEqualTypeOf<"/methods/value">();
+        expectTypeOf(routes["/short/[param]"].mock(options3)).toEqualTypeOf<"/short/value">();
+        expectTypeOf(routes["/short/[param]"].get.mock(options3)).toEqualTypeOf<"/short/value">();
+
+        const options4 = { params: { param: 123 } } as const;
+
+        expectTypeOf(routes["/methods/[param]"].mock(options4)).toEqualTypeOf<"/methods/123">();
+        expectTypeOf(routes["/methods/[param]"].get.mock(options4)).toEqualTypeOf<"/methods/123">();
+        expectTypeOf(routes["/short/[param]"].mock(options4)).toEqualTypeOf<"/short/123">();
+        expectTypeOf(routes["/short/[param]"].get.mock(options4)).toEqualTypeOf<"/short/123">();
       });
     });
 
@@ -387,44 +450,85 @@ describe("routes", () => {
           get: {
             params: {
               param1: schema.type as string,
-              param2: schema.type as string,
+              param2: schema.type as number,
             },
           },
         },
         "/short/[param1]/[param2]": {
           params: {
             param1: schema.type as string,
-            param2: schema.type as string,
+            param2: schema.type as number,
           },
         },
       });
 
       it("引数が要求されること", () => {
-        expectTypeOf(routes["/methods/[param1]/[param2]"].get).parameters.branded.toEqualTypeOf<
-          [{ params: { param1: string; param2: string } }]
-        >();
+        type ExpectedType = [{ params: { param1: string; param2: number } }];
+        // expectTypeOf(routes["/methods/[params]"].get).parameters.branded.toEqualTypeOf の形式だと何故かテストが通らない
+        expectTypeOf<
+          Parameters<(typeof routes)["/methods/[param1]/[param2]"]["get"]>
+        >().branded.toEqualTypeOf<ExpectedType>();
 
-        expectTypeOf(routes["/short/[param1]/[param2]"].get).parameters.branded.toEqualTypeOf<
-          [{ params: { param1: string; param2: string } }]
-        >();
+        expectTypeOf<
+          Parameters<(typeof routes)["/short/[param1]/[param2]"]["get"]>
+        >().branded.toEqualTypeOf<ExpectedType>();
+      });
+
+      it("mock 関数では引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [{ params?: { param1?: SchemaPrimitiveParam; param2?: SchemaPrimitiveParam } }?];
+
+        // expectTypeOf(routes["/methods/[params]"].mock).parameters.branded.toEqualTypeOf の形式だと何故かテストが通らない
+        expectTypeOf<Parameters<(typeof routes)["/methods/[param1]/[param2]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<
+          Parameters<(typeof routes)["/methods/[param1]/[param2]"]["get"]["mock"]>
+        >().toEqualTypeOf<ExpectedType>();
+
+        expectTypeOf<Parameters<(typeof routes)["/short/[param1]/[param2]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<
+          Parameters<(typeof routes)["/short/[param1]/[param2]"]["get"]["mock"]>
+        >().toEqualTypeOf<ExpectedType>();
       });
 
       it("戻り値が詳細に推論されること", () => {
-        expectTypeOf(
-          routes["/methods/[param1]/[param2]"].get({ params: { param1: "value1", param2: "value2" } }),
-        ).toEqualTypeOf<`/methods/${string}/${string}`>();
+        const options1 = { params: { param1: "value", param2: 123 } };
 
         expectTypeOf(
-          routes["/short/[param1]/[param2]"].get({ params: { param1: "value1", param2: "value2" } }),
-        ).toEqualTypeOf<`/short/${string}/${string}`>();
+          routes["/methods/[param1]/[param2]"].get(options1),
+        ).toEqualTypeOf<`/methods/${string}/${number}`>();
+        expectTypeOf(routes["/short/[param1]/[param2]"].get(options1)).toEqualTypeOf<`/short/${string}/${number}`>();
+
+        const options2 = { params: { param1: "value", param2: 123 } } as const;
+
+        expectTypeOf(routes["/methods/[param1]/[param2]"].get(options2)).toEqualTypeOf<"/methods/value/123">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].get(options2)).toEqualTypeOf<"/short/value/123">();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        expectTypeOf(routes["/methods/[param1]/[param2]"].mock()).toEqualTypeOf<"/methods/*/*">();
+        expectTypeOf(routes["/methods/[param1]/[param2]"].get.mock()).toEqualTypeOf<"/methods/*/*">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].mock()).toEqualTypeOf<"/short/*/*">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].get.mock()).toEqualTypeOf<"/short/*/*">();
+
+        const options1 = { params: { param1: "value", param2: 123 } };
+        const options2 = { params: { param1: "value", param2: 123 } } as const;
 
         expectTypeOf(
-          routes["/methods/[param1]/[param2]"].get({ params: { param1: "value1", param2: "value2" } } as const),
-        ).toEqualTypeOf<"/methods/value1/value2">();
-
+          routes["/methods/[param1]/[param2]"].mock(options1),
+        ).toEqualTypeOf<`/methods/${string}/${number}`>();
         expectTypeOf(
-          routes["/short/[param1]/[param2]"].get({ params: { param1: "value1", param2: "value2" } } as const),
-        ).toEqualTypeOf<"/short/value1/value2">();
+          routes["/methods/[param1]/[param2]"].get.mock(options1),
+        ).toEqualTypeOf<`/methods/${string}/${number}`>();
+
+        expectTypeOf(routes["/methods/[param1]/[param2]"].mock(options2)).toEqualTypeOf<"/methods/value/123">();
+        expectTypeOf(routes["/methods/[param1]/[param2]"].get.mock(options2)).toEqualTypeOf<"/methods/value/123">();
+
+        expectTypeOf(routes["/short/[param1]/[param2]"].mock(options1)).toEqualTypeOf<`/short/${string}/${number}`>();
+        expectTypeOf(
+          routes["/short/[param1]/[param2]"].get.mock(options1),
+        ).toEqualTypeOf<`/short/${string}/${number}`>();
+
+        expectTypeOf(routes["/short/[param1]/[param2]"].mock(options2)).toEqualTypeOf<"/short/value/123">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].get.mock(options2)).toEqualTypeOf<"/short/value/123">();
       });
     });
 
@@ -445,31 +549,56 @@ describe("routes", () => {
       });
 
       it("引数が要求されること", () => {
-        expectTypeOf(routes["/methods/[...params]"].get).parameters.branded.toEqualTypeOf<
-          [{ params: { params: readonly string[] } }]
-        >();
+        type ExpectedType = [{ params: { params: Readonly<string[]> } }];
 
-        expectTypeOf(routes["/short/[...params]"].get).parameters.branded.toEqualTypeOf<
-          [{ params: { params: readonly string[] } }]
-        >();
+        expectTypeOf(routes["/methods/[...params]"].get).parameters.branded.toEqualTypeOf<ExpectedType>();
+        expectTypeOf(routes["/short/[...params]"].get).parameters.branded.toEqualTypeOf<ExpectedType>();
+      });
+
+      it("mock 関数では引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [{ params?: { params?: SchemaArrayParam } }?];
+
+        // expectTypeOf(routes["/methods/[params]"].mock).parameters.branded.toEqualTypeOf の形式だと何故かテストが通らない
+        expectTypeOf<Parameters<(typeof routes)["/methods/[...params]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<
+          Parameters<(typeof routes)["/methods/[...params]"]["get"]["mock"]>
+        >().toEqualTypeOf<ExpectedType>();
+
+        expectTypeOf<Parameters<(typeof routes)["/short/[...params]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<Parameters<(typeof routes)["/short/[...params]"]["get"]["mock"]>>().toEqualTypeOf<ExpectedType>();
       });
 
       it("戻り値が詳細に推論されること", () => {
-        expectTypeOf(
-          routes["/methods/[...params]"].get({ params: { params: ["value1", "value2"] } }),
-        ).toEqualTypeOf<`/methods/${string}`>();
+        const options1 = { params: { params: ["value1", "value2"] } };
 
-        expectTypeOf(
-          routes["/short/[...params]"].get({ params: { params: ["value1", "value2"] } }),
-        ).toEqualTypeOf<`/short/${string}`>();
+        expectTypeOf(routes["/methods/[...params]"].get(options1)).toEqualTypeOf<`/methods/${string}`>();
+        expectTypeOf(routes["/short/[...params]"].get(options1)).toEqualTypeOf<`/short/${string}`>();
 
-        expectTypeOf(
-          routes["/methods/[...params]"].get({ params: { params: ["value1", "value2"] } } as const),
-        ).toEqualTypeOf<"/methods/value1/value2">();
+        const options2 = { params: { params: ["value1", "value2"] } } as const;
 
-        expectTypeOf(
-          routes["/short/[...params]"].get({ params: { params: ["value1", "value2"] } } as const),
-        ).toEqualTypeOf<"/short/value1/value2">();
+        expectTypeOf(routes["/methods/[...params]"].get(options2)).toEqualTypeOf<"/methods/value1/value2">();
+        expectTypeOf(routes["/short/[...params]"].get(options2)).toEqualTypeOf<"/short/value1/value2">();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        expectTypeOf(routes["/methods/[...params]"].mock()).toEqualTypeOf<"/methods/*">();
+        expectTypeOf(routes["/methods/[...params]"].get.mock()).toEqualTypeOf<"/methods/*">();
+        expectTypeOf(routes["/short/[...params]"].mock()).toEqualTypeOf<"/short/*">();
+        expectTypeOf(routes["/short/[...params]"].get.mock()).toEqualTypeOf<"/short/*">();
+
+        const options1 = { params: { params: ["value", 123] } };
+
+        expectTypeOf(routes["/methods/[...params]"].mock(options1)).toEqualTypeOf<`/methods/${string | number}`>();
+        expectTypeOf(routes["/methods/[...params]"].get.mock(options1)).toEqualTypeOf<`/methods/${string | number}`>();
+        expectTypeOf(routes["/short/[...params]"].mock(options1)).toEqualTypeOf<`/short/${string | number}`>();
+        expectTypeOf(routes["/short/[...params]"].get.mock(options1)).toEqualTypeOf<`/short/${string | number}`>();
+
+        const options2 = { params: { params: ["value", 123] } } as const;
+
+        expectTypeOf(routes["/methods/[...params]"].mock(options2)).toEqualTypeOf<"/methods/value/123">();
+        expectTypeOf(routes["/methods/[...params]"].get.mock(options2)).toEqualTypeOf<"/methods/value/123">();
+        expectTypeOf(routes["/short/[...params]"].mock(options2)).toEqualTypeOf<"/short/value/123">();
+        expectTypeOf(routes["/short/[...params]"].get.mock(options2)).toEqualTypeOf<"/short/value/123">();
       });
     });
 
@@ -490,35 +619,68 @@ describe("routes", () => {
       });
 
       it("省略可能な引数が要求されること", () => {
-        // expectTypeOf(routes["/methods/[[...params]]"].get).parameters.branded.toEqualTypeOf の形式だと何故かテストが通らない
-        expectTypeOf<Parameters<(typeof routes)["/methods/[[...params]]"]["get"]>>().branded.toEqualTypeOf<
-          [{ params?: { params?: Readonly<string[]> } }?]
-        >();
+        type ExpectedType = [{ params?: { params?: Readonly<string[]> } }?];
 
-        expectTypeOf<Parameters<(typeof routes)["/short/[[...params]]"]["get"]>>().branded.toEqualTypeOf<
-          [{ params?: { params?: Readonly<string[]> } }?]
-        >();
+        // expectTypeOf(routes["/methods/[[...params]]"].get).parameters.branded.toEqualTypeOf の形式だと何故かテストが通らない
+        expectTypeOf<
+          Parameters<(typeof routes)["/methods/[[...params]]"]["get"]>
+        >().branded.toEqualTypeOf<ExpectedType>();
+        expectTypeOf<
+          Parameters<(typeof routes)["/short/[[...params]]"]["get"]>
+        >().branded.toEqualTypeOf<ExpectedType>();
+      });
+
+      it("mock 関数も引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [{ params?: { params?: SchemaArrayParam } }?];
+
+        // expectTypeOf(routes["/methods/[[...params]]"].mock).parameters.branded.toEqualTypeOf の形式だと何故かテストが通らない
+        expectTypeOf<Parameters<(typeof routes)["/methods/[[...params]]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<
+          Parameters<(typeof routes)["/methods/[[...params]]"]["get"]["mock"]>
+        >().toEqualTypeOf<ExpectedType>();
+
+        expectTypeOf<Parameters<(typeof routes)["/short/[[...params]]"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<
+          Parameters<(typeof routes)["/short/[[...params]]"]["get"]["mock"]>
+        >().toEqualTypeOf<ExpectedType>();
       });
 
       it("戻り値が詳細に推論されること", () => {
         expectTypeOf(routes["/methods/[[...params]]"].get()).toEqualTypeOf<"/methods">();
         expectTypeOf(routes["/short/[[...params]]"].get()).toEqualTypeOf<"/short">();
 
-        expectTypeOf(
-          routes["/methods/[[...params]]"].get({ params: { params: ["value1", "value2"] } }),
-        ).toEqualTypeOf<`/methods/${string}`>();
+        const options1 = { params: { params: ["value1", "value2"] } };
 
-        expectTypeOf(
-          routes["/short/[[...params]]"].get({ params: { params: ["value1", "value2"] } }),
-        ).toEqualTypeOf<`/short/${string}`>();
+        expectTypeOf(routes["/methods/[[...params]]"].get(options1)).toEqualTypeOf<`/methods/${string}`>();
+        expectTypeOf(routes["/short/[[...params]]"].get(options1)).toEqualTypeOf<`/short/${string}`>();
 
-        expectTypeOf(
-          routes["/methods/[[...params]]"].get({ params: { params: ["value1", "value2"] } } as const),
-        ).toEqualTypeOf<"/methods/value1/value2">();
+        const options2 = { params: { params: ["value1", "value2"] } } as const;
 
+        expectTypeOf(routes["/methods/[[...params]]"].get(options2)).toEqualTypeOf<"/methods/value1/value2">();
+        expectTypeOf(routes["/short/[[...params]]"].get(options2)).toEqualTypeOf<"/short/value1/value2">();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        expectTypeOf(routes["/methods/[[...params]]"].mock()).toEqualTypeOf<"/methods/*">();
+        expectTypeOf(routes["/methods/[[...params]]"].get.mock()).toEqualTypeOf<"/methods/*">();
+        expectTypeOf(routes["/short/[[...params]]"].mock()).toEqualTypeOf<"/short/*">();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock()).toEqualTypeOf<"/short/*">();
+
+        const options1 = { params: { params: ["value", 123] } };
+
+        expectTypeOf(routes["/methods/[[...params]]"].mock(options1)).toEqualTypeOf<`/methods/${string | number}`>();
+        expectTypeOf(routes["/short/[[...params]]"].mock(options1)).toEqualTypeOf<`/short/${string | number}`>();
         expectTypeOf(
-          routes["/short/[[...params]]"].get({ params: { params: ["value1", "value2"] } } as const),
-        ).toEqualTypeOf<"/short/value1/value2">();
+          routes["/methods/[[...params]]"].get.mock(options1),
+        ).toEqualTypeOf<`/methods/${string | number}`>();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock(options1)).toEqualTypeOf<`/short/${string | number}`>();
+
+        const options2 = { params: { params: ["value", 123] } } as const;
+
+        expectTypeOf(routes["/methods/[[...params]]"].mock(options2)).toEqualTypeOf<"/methods/value/123">();
+        expectTypeOf(routes["/short/[[...params]]"].mock(options2)).toEqualTypeOf<"/short/value/123">();
+        expectTypeOf(routes["/methods/[[...params]]"].get.mock(options2)).toEqualTypeOf<"/methods/value/123">();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock(options2)).toEqualTypeOf<"/short/value/123">();
       });
     });
 
@@ -552,11 +714,38 @@ describe("routes", () => {
         >();
       });
 
+      it("mock 関数では引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [
+          {
+            queries?: {
+              string?: SchemaQuery;
+              number?: SchemaQuery;
+              boolean?: SchemaQuery;
+              array?: SchemaQuery;
+            };
+          }?,
+        ];
+
+        expectTypeOf(routes["/queries/required"].mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+        expectTypeOf(routes["/queries/required"].get.mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+      });
+
       it("戻り値が詳細に推論されること", () => {
         const result = routes["/queries/required"].get({
           queries: { string: "value", number: 1, boolean: true, array: ["a", "b"] },
         });
         expectTypeOf(result).toEqualTypeOf<`/queries/required?${string}`>();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `/queries/required${string}`;
+        expectTypeOf(routes["/queries/required"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/queries/required"].get.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `/queries/required?${string}`;
+        const options = { queries: { string: "value", number: 1, boolean: true, array: ["a", "b"] } };
+        expectTypeOf(routes["/queries/required"].mock(options)).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/queries/required"].get.mock(options)).toEqualTypeOf<ExpectedType2>();
       });
     });
 
@@ -589,6 +778,21 @@ describe("routes", () => {
         >();
       });
 
+      it("mock 関数も引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [
+          {
+            queries?: {
+              string?: SchemaQuery;
+              number?: SchemaQuery;
+              boolean?: SchemaQuery;
+              array?: SchemaQuery;
+            };
+          }?,
+        ];
+        expectTypeOf(routes["/queries/optional"].mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+        expectTypeOf(routes["/queries/optional"].get.mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+      });
+
       it("戻り値が詳細に推論されること", () => {
         expectTypeOf(routes["/queries/optional"].get()).toEqualTypeOf<`/queries/optional${string}`>();
 
@@ -596,6 +800,17 @@ describe("routes", () => {
           queries: { string: "value", number: 1, boolean: true, array: ["a", "b"] },
         });
         expectTypeOf(result).toEqualTypeOf<`/queries/optional?${string}`>();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `/queries/optional${string}`;
+        expectTypeOf(routes["/queries/optional"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/queries/optional"].get.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `/queries/optional?${string}`;
+        const options = { queries: { string: "value", number: 1, boolean: true, array: ["a", "b"] } };
+        expectTypeOf(routes["/queries/optional"].mock(options)).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/queries/optional"].get.mock(options)).toEqualTypeOf<ExpectedType2>();
       });
     });
 
@@ -629,10 +844,36 @@ describe("routes", () => {
         >();
       });
 
+      it("mock 関数も引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [
+          {
+            queries?: {
+              string?: SchemaQuery;
+              number?: SchemaQuery;
+              boolean?: SchemaQuery;
+              array?: SchemaQuery;
+            };
+          }?,
+        ];
+        expectTypeOf(routes["/queries/both"].mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+        expectTypeOf(routes["/queries/both"].get.mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+      });
+
       it("戻り値が詳細に推論されること", () => {
         expectTypeOf(
           routes["/queries/both"].get({ queries: { string: "value", number: 1 } }),
         ).toEqualTypeOf<`/queries/both?${string}`>();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `/queries/both${string}`;
+        expectTypeOf(routes["/queries/both"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/queries/both"].get.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `/queries/both?${string}`;
+        const options = { queries: { string: "value", number: 1 } };
+        expectTypeOf(routes["/queries/both"].mock(options)).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/queries/both"].get.mock(options)).toEqualTypeOf<ExpectedType2>();
       });
     });
 
@@ -640,23 +881,44 @@ describe("routes", () => {
       const routes = schema.routes({
         "/hash": {
           get: {
-            hash: schema.type as string,
+            hash: schema.type as "hash1" | "hash2",
           },
         },
       });
 
       it("省略可能な引数が要求されること", () => {
         // expectTypeOf(routes["/hash"].get).parameters.toEqualTypeOf の形式だと何故かテストが通らない;
-        expectTypeOf<Parameters<(typeof routes)["/hash"]["get"]>>().toEqualTypeOf<[{ hash?: string }?]>();
+        expectTypeOf<Parameters<(typeof routes)["/hash"]["get"]>>().toEqualTypeOf<[{ hash?: "hash1" | "hash2" }?]>();
+      });
+
+      it("mock 関数も引数が省略でき、パラメータの型が緩いこと", () => {
+        // expectTypeOf(routes["/hash"].mock).parameters.toEqualTypeOf の形式だと何故かテストが通らない;
+        type ExpectedType = [{ hash?: string }?];
+        expectTypeOf<Parameters<(typeof routes)["/hash"]["mock"]>>().toEqualTypeOf<ExpectedType>();
+        expectTypeOf<Parameters<(typeof routes)["/hash"]["get"]["mock"]>>().toEqualTypeOf<ExpectedType>();
       });
 
       it("戻り値が詳細に推論されること", () => {
         expectTypeOf(routes["/hash"].get()).toEqualTypeOf<"/hash">();
 
-        expectTypeOf(routes["/hash"].get({ hash: "section" })).toEqualTypeOf<`/hash#section`>();
+        expectTypeOf(routes["/hash"].get({ hash: "hash1" })).toEqualTypeOf<`/hash#hash1`>();
+        expectTypeOf(routes["/hash"].get({ hash: "hash2" })).toEqualTypeOf<`/hash#hash2`>();
+      });
 
-        const opt = { hash: "section" };
-        expectTypeOf(routes["/hash"].get(opt)).toEqualTypeOf<`/hash#${string}`>();
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `/hash`;
+        expectTypeOf(routes["/hash"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/hash"].get.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `/hash#${string}`;
+        const options1 = { hash: "hash1" };
+        expectTypeOf(routes["/hash"].mock(options1)).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/hash"].get.mock(options1)).toEqualTypeOf<ExpectedType2>();
+
+        type ExpectedType3 = `/hash#hash1`;
+        const options2 = { hash: "hash1" } as const;
+        expectTypeOf(routes["/hash"].mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/hash"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
       });
     });
 
@@ -687,6 +949,18 @@ describe("routes", () => {
         >();
       });
 
+      it("mock 関数も引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType = [
+          {
+            params?: { param?: SchemaPrimitiveParam };
+            queries?: { optional?: SchemaQuery };
+            hash?: string;
+          }?,
+        ];
+        expectTypeOf(routes["/all/[param]"].mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+        expectTypeOf(routes["/all/[param]"].get.mock).parameters.branded.toEqualTypeOf<ExpectedType>();
+      });
+
       it("戻り値が詳細に推論されること", () => {
         expectTypeOf(
           routes["/all/[param]"].get({ params: { param: "value" }, hash: "section" } as const),
@@ -711,6 +985,30 @@ describe("routes", () => {
         };
         expectTypeOf(routes["/all/[param]"].get(opt)).toEqualTypeOf<`/all/${string}?${string}#${string}`>();
       });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `/all/*${string}`;
+        expectTypeOf(routes["/all/[param]"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/all/[param]"].get.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `/all/${string}?${string}#${string}`;
+        const options = {
+          params: { param: "value" },
+          queries: { optional: "opt" },
+          hash: "section",
+        };
+        expectTypeOf(routes["/all/[param]"].mock(options)).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/all/[param]"].get.mock(options)).toEqualTypeOf<ExpectedType2>();
+
+        type ExpectedType3 = `/all/value?${string}#section`;
+        const options2 = {
+          params: { param: "value" },
+          queries: { optional: "opt" },
+          hash: "section",
+        } as const;
+        expectTypeOf(routes["/all/[param]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/all/[param]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
+      });
     });
 
     describe("Base URL", () => {
@@ -720,6 +1018,12 @@ describe("routes", () => {
 
       it("戻り値が詳細に推論されること", () => {
         expectTypeOf(routes["/path"].get()).toEqualTypeOf<`https://api.example.com/path`>();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType = `https://api.example.com/path`;
+        expectTypeOf(routes["/path"].mock()).toEqualTypeOf<ExpectedType>();
+        expectTypeOf(routes["/path"].get.mock()).toEqualTypeOf<ExpectedType>();
       });
     });
 
@@ -743,6 +1047,451 @@ describe("routes", () => {
         expectTypeOf(
           routes["myapp://path/[param]"].get({ params: { param: "value" } } as const),
         ).toEqualTypeOf<`myapp://path/value`>();
+      });
+
+      it("mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `myapp://path`;
+        expectTypeOf(routes["myapp://path"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["myapp://path"].get.mock()).toEqualTypeOf<ExpectedType1>();
+      });
+    });
+
+    describe("Mock", () => {
+      const routes = schema.routes({
+        "/[param]": {
+          get: {
+            params: {
+              param: schema.type as string,
+            },
+            queries: {
+              a: schema.type as string,
+              x: schema.type as string,
+            },
+            hash: schema.type as "hash1",
+          },
+          post: {
+            params: {
+              param: schema.type as number,
+            },
+            queries: {
+              b: schema.type as number,
+              x: schema.type as number,
+            },
+            hash: schema.type as "hash2",
+          },
+        },
+        "/[...params]": {
+          get: {
+            params: {
+              params: schema.type as string[],
+            },
+          },
+          put: {
+            params: {
+              params: schema.type as number[],
+            },
+          },
+        },
+        "/[[...params]]": {
+          get: {
+            params: {
+              params: schema.type as string[],
+            },
+          },
+          delete: {
+            params: {
+              params: schema.type as number[],
+            },
+          },
+        },
+      });
+
+      it("トップレベルの mock 関数は各 HTTP メソッドを包括した引数を受けること", () => {
+        type ExpectedType1 = [
+          {
+            params?: { param?: SchemaPrimitiveParam };
+            queries?: { a?: SchemaQuery; b?: SchemaQuery; x?: SchemaQuery };
+            hash?: string;
+          }?,
+        ];
+        expectTypeOf(routes["/[param]"].mock).parameters.toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = [
+          {
+            params?: { params?: SchemaArrayParam };
+          }?,
+        ];
+        expectTypeOf<Parameters<(typeof routes)["/[...params]"]["mock"]>>().toEqualTypeOf<ExpectedType2>();
+        expectTypeOf<Parameters<(typeof routes)["/[[...params]]"]["mock"]>>().toEqualTypeOf<ExpectedType2>();
+      });
+
+      it("トップレベルの mock 関数は HTTP メソッドが複数あっても戻り値が詳細に推論されること", () => {
+        expectTypeOf(routes["/[param]"].mock()).toEqualTypeOf<`/*${string}`>();
+        expectTypeOf(routes["/[...params]"].mock()).toEqualTypeOf<`/*`>();
+        expectTypeOf(routes["/[[...params]]"].mock()).toEqualTypeOf<`/*`>();
+
+        const options1 = { params: { param: "value" }, queries: { a: "a", b: "b" }, hash: "hash" };
+        expectTypeOf(routes["/[param]"].mock(options1)).toEqualTypeOf<`/${string}?${string}#${string}`>();
+
+        const options2 = { params: { param: "value" }, queries: { x: "x" }, hash: "hash" } as const;
+        expectTypeOf(routes["/[param]"].mock(options2)).toEqualTypeOf<`/value?${string}#hash`>();
+
+        const options3 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["/[...params]"].mock(options3)).toEqualTypeOf<`/${string}`>();
+        expectTypeOf(routes["/[[...params]]"].mock(options3)).toEqualTypeOf<`/${string}`>();
+
+        const options4 = { params: { params: [123, 456] } } as const;
+        expectTypeOf(routes["/[...params]"].mock(options4)).toEqualTypeOf<`/123/456`>();
+        expectTypeOf(routes["/[[...params]]"].mock(options4)).toEqualTypeOf<`/123/456`>();
+      });
+
+      it("HTTP メソッドごとの mock 関数はそれぞれの定義を引き継いでおり、引数が省略でき、パラメータの型が緩いこと", () => {
+        type ExpectedType1 = [
+          { params?: { param?: SchemaPrimitiveParam }; queries?: { a?: SchemaQuery; x?: SchemaQuery }; hash?: string }?,
+        ];
+        expectTypeOf(routes["/[param]"].get.mock).parameters.toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = [
+          { params?: { param?: SchemaPrimitiveParam }; queries?: { b?: SchemaQuery; x?: SchemaQuery }; hash?: string }?,
+        ];
+        expectTypeOf(routes["/[param]"].post.mock).parameters.toEqualTypeOf<ExpectedType2>();
+
+        type ExpectedType3 = [{ params?: { params?: SchemaArrayParam } }?];
+        expectTypeOf<Parameters<(typeof routes)["/[...params]"]["get"]["mock"]>>().toEqualTypeOf<ExpectedType3>();
+        expectTypeOf<Parameters<(typeof routes)["/[...params]"]["put"]["mock"]>>().toEqualTypeOf<ExpectedType3>();
+        expectTypeOf<Parameters<(typeof routes)["/[[...params]]"]["get"]["mock"]>>().toEqualTypeOf<ExpectedType3>();
+        expectTypeOf<Parameters<(typeof routes)["/[[...params]]"]["delete"]["mock"]>>().toEqualTypeOf<ExpectedType3>();
+      });
+
+      it("HTTP メソッドごとの mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `/*${string}`;
+        expectTypeOf(routes["/[param]"].get.mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/[param]"].post.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `/*`;
+        expectTypeOf(routes["/[...params]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/[...params]"].put.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/[[...params]]"].delete.mock()).toEqualTypeOf<ExpectedType2>();
+
+        const options1 = { params: { param: "value" }, queries: { a: "a", x: "x" }, hash: "hash" };
+        expectTypeOf(routes["/[param]"].get.mock(options1)).toEqualTypeOf<`/${string}?${string}#${string}`>();
+
+        const options2 = { params: { param: "value" }, queries: { b: "b", x: "x" }, hash: "hash" } as const;
+        expectTypeOf(routes["/[param]"].post.mock(options2)).toEqualTypeOf<`/value?${string}#hash`>();
+
+        const options3 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["/[...params]"].get.mock(options3)).toEqualTypeOf<`/${string}`>();
+        expectTypeOf(routes["/[[...params]]"].get.mock(options3)).toEqualTypeOf<`/${string}`>();
+
+        const options4 = { params: { params: [123, 456] } } as const;
+        expectTypeOf(routes["/[...params]"].put.mock(options4)).toEqualTypeOf<`/123/456`>();
+        expectTypeOf(routes["/[[...params]]"].delete.mock(options4)).toEqualTypeOf<`/123/456`>();
+      });
+    });
+
+    describe("Base URL", () => {
+      const routes = schema.routes("https://api.example.com", {
+        "/path": {
+          get: schema.empty,
+          post: schema.empty,
+        },
+        "/path/[param]": {
+          get: {
+            params: {
+              param: schema.type as string,
+            },
+          },
+        },
+        "/path/[...params]": {
+          get: {
+            params: {
+              params: schema.type as string[],
+            },
+          },
+        },
+        "/path/[[...params]]": {
+          get: {
+            params: {
+              params: schema.type as string[],
+            },
+          },
+        },
+        "/path/all/[param]": {
+          get: {
+            params: {
+              param: schema.type as string,
+            },
+            queries: {
+              q: schema.type as string,
+            },
+            hash: schema.type as string,
+          },
+        },
+        "/short": schema.empty,
+        "/short/[param]": {
+          params: {
+            param: schema.type as string,
+          },
+        },
+        "/short/[...params]": {
+          params: {
+            params: schema.type as string[],
+          },
+        },
+        "/short/[[...params]]": {
+          params: {
+            params: schema.type as string[],
+          },
+        },
+        "/short/all/[param]": {
+          params: {
+            param: schema.type as string,
+          },
+          queries: {
+            q: schema.type as string,
+          },
+          hash: schema.type as string,
+        },
+      });
+
+      it("Base URL を含んで戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `https://api.example.com/path`;
+        expectTypeOf(routes["/path"].get()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/path/[[...params]]"].get()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `https://api.example.com/path/${string}`;
+        const options1 = { params: { param: "value" } };
+        expectTypeOf(routes["/path/[param]"].get(options1)).toEqualTypeOf<ExpectedType2>();
+
+        const options2 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["/path/[...params]"].get(options2)).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/path/[[...params]]"].get(options2)).toEqualTypeOf<ExpectedType2>();
+
+        const options3 = {
+          params: { param: "value" },
+          queries: { q: "query" },
+          hash: "hash",
+        } as const;
+        type ExpectedType3 = `https://api.example.com/path/all/value?${string}#hash`;
+        expectTypeOf(routes["/path/all/[param]"].get(options3)).toEqualTypeOf<ExpectedType3>();
+
+        type ExpectedType4 = `https://api.example.com/short`;
+        expectTypeOf(routes["/short"].get()).toEqualTypeOf<ExpectedType4>();
+        expectTypeOf(routes["/short/[[...params]]"].get()).toEqualTypeOf<ExpectedType4>();
+
+        type ExpectedType5 = `https://api.example.com/short/${string}`;
+        const options4 = { params: { param: "value" } };
+        expectTypeOf(routes["/short/[param]"].get(options4)).toEqualTypeOf<ExpectedType5>();
+
+        const options5 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["/short/[...params]"].get(options5)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["/short/[[...params]]"].get(options5)).toEqualTypeOf<ExpectedType5>();
+
+        const options6 = {
+          params: { param: "value" },
+          queries: { q: "query" },
+          hash: "hash",
+        } as const;
+        type ExpectedType6 = `https://api.example.com/short/all/value?${string}#hash`;
+        expectTypeOf(routes["/short/all/[param]"].get(options6)).toEqualTypeOf<ExpectedType6>();
+      });
+
+      it("Base URL を含んで mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `https://api.example.com/path`;
+        expectTypeOf(routes["/path"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["/path"].get.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `https://api.example.com/path/*`;
+        expectTypeOf(routes["/path/[param]"].mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/path/[param]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/path/[...params]"].mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/path/[...params]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/path/[[...params]]"].mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/path/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+
+        const options1 = { params: { param: "value" } };
+        type ExpectedType3 = `https://api.example.com/path/${string}`;
+        expectTypeOf(routes["/path/[param]"].mock(options1)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/path/[param]"].get.mock(options1)).toEqualTypeOf<ExpectedType3>();
+
+        const options2 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["/path/[...params]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/path/[...params]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/path/[[...params]]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/path/[[...params]]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
+
+        const options3 = { params: { param: "value" } } as const;
+        type ExpectedType4 = `https://api.example.com/path/value`;
+        expectTypeOf(routes["/path/[param]"].mock(options3)).toEqualTypeOf<ExpectedType4>();
+        expectTypeOf(routes["/path/[param]"].get.mock(options3)).toEqualTypeOf<ExpectedType4>();
+
+        const options4 = { params: { params: ["value1", "value2"] } } as const;
+        type ExpectedType5 = `https://api.example.com/path/value1/value2`;
+        expectTypeOf(routes["/path/[...params]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["/path/[...params]"].get.mock(options4)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["/path/[[...params]]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["/path/[[...params]]"].get.mock(options4)).toEqualTypeOf<ExpectedType5>();
+
+        const options5 = {
+          params: { param: "value" },
+          queries: { q: "query" },
+          hash: "hash",
+        };
+        type ExpectedType6 = `https://api.example.com/path/all/${string}?${string}#${string}`;
+        expectTypeOf(routes["/path/all/[param]"].mock(options5)).toEqualTypeOf<ExpectedType6>();
+        expectTypeOf(routes["/path/all/[param]"].get.mock(options5)).toEqualTypeOf<ExpectedType6>();
+
+        const options6 = {
+          params: { param: "value" },
+          queries: { q: "query" },
+          hash: "hash",
+        } as const;
+        type ExpectedType7 = `https://api.example.com/path/all/value?${string}#hash`;
+        expectTypeOf(routes["/path/all/[param]"].mock(options6)).toEqualTypeOf<ExpectedType7>();
+        expectTypeOf(routes["/path/all/[param]"].get.mock(options6)).toEqualTypeOf<ExpectedType7>();
+
+        type ExpectedType8 = `https://api.example.com/short`;
+        expectTypeOf(routes["/short"].mock()).toEqualTypeOf<ExpectedType8>();
+        expectTypeOf(routes["/short"].get.mock()).toEqualTypeOf<ExpectedType8>();
+
+        type ExpectedType9 = `https://api.example.com/short/*`;
+        expectTypeOf(routes["/short/[param]"].mock()).toEqualTypeOf<ExpectedType9>();
+        expectTypeOf(routes["/short/[param]"].get.mock()).toEqualTypeOf<ExpectedType9>();
+        expectTypeOf(routes["/short/[...params]"].mock()).toEqualTypeOf<ExpectedType9>();
+        expectTypeOf(routes["/short/[...params]"].get.mock()).toEqualTypeOf<ExpectedType9>();
+        expectTypeOf(routes["/short/[[...params]]"].mock()).toEqualTypeOf<ExpectedType9>();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType9>();
+
+        const options7 = { params: { param: "value" } };
+        type ExpectedType10 = `https://api.example.com/short/${string}`;
+        expectTypeOf(routes["/short/[param]"].mock(options7)).toEqualTypeOf<ExpectedType10>();
+        expectTypeOf(routes["/short/[param]"].get.mock(options7)).toEqualTypeOf<ExpectedType10>();
+
+        const options8 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["/short/[...params]"].mock(options8)).toEqualTypeOf<ExpectedType10>();
+        expectTypeOf(routes["/short/[...params]"].get.mock(options8)).toEqualTypeOf<ExpectedType10>();
+        expectTypeOf(routes["/short/[[...params]]"].mock(options8)).toEqualTypeOf<ExpectedType10>();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock(options8)).toEqualTypeOf<ExpectedType10>();
+
+        const options9 = {
+          params: { param: "value" },
+          queries: { q: "query" },
+          hash: "hash",
+        };
+        type ExpectedType11 = `https://api.example.com/short/all/${string}?${string}#${string}`;
+        expectTypeOf(routes["/short/all/[param]"].mock(options9)).toEqualTypeOf<ExpectedType11>();
+        expectTypeOf(routes["/short/all/[param]"].get.mock(options9)).toEqualTypeOf<ExpectedType11>();
+
+        const options10 = {
+          params: { param: "value" },
+          queries: { q: "query" },
+          hash: "hash",
+        } as const;
+        type ExpectedType12 = `https://api.example.com/short/all/value?${string}#hash`;
+        expectTypeOf(routes["/short/all/[param]"].mock(options10)).toEqualTypeOf<ExpectedType12>();
+        expectTypeOf(routes["/short/all/[param]"].get.mock(options10)).toEqualTypeOf<ExpectedType12>();
+      });
+    });
+
+    describe("Custom Schema", () => {
+      const routes = schema.routes({
+        "myapp://path": schema.empty,
+        "myapp://path/[param]": {
+          params: {
+            param: schema.type as string,
+          },
+        },
+        "myapp://path/[...params]": {
+          params: {
+            params: schema.type as string[],
+          },
+        },
+        "myapp://path/[[...params]]": {
+          params: {
+            params: schema.type as string[],
+          },
+        },
+        "myapp://https://example.com/[param]": {
+          params: {
+            param: schema.type as string,
+          },
+        },
+        "myapp://path/[[...params]]/https://example.com/[param]": {
+          params: {
+            params: schema.type as string[],
+            param: schema.type as string,
+          },
+        },
+      });
+
+      it("Custom Schema を含んで戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `myapp://path`;
+        expectTypeOf(routes["myapp://path"].get()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `myapp://path/${string}`;
+        const options1 = { params: { param: "value" } };
+        expectTypeOf(routes["myapp://path/[param]"].get(options1)).toEqualTypeOf<ExpectedType2>();
+
+        const options2 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["myapp://path/[...params]"].get(options2)).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].get(options2)).toEqualTypeOf<ExpectedType2>();
+
+        const options3 = { params: { param: "value" } } as const;
+        type ExpectedType3 = `myapp://path/value`;
+        expectTypeOf(routes["myapp://path/[param]"].get(options3)).toEqualTypeOf<ExpectedType3>();
+
+        const options4 = { params: { params: ["value1", "value2"] } } as const;
+        type ExpectedType4 = `myapp://path/value1/value2`;
+        expectTypeOf(routes["myapp://path/[...params]"].get(options4)).toEqualTypeOf<ExpectedType4>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].get(options4)).toEqualTypeOf<ExpectedType4>();
+      });
+
+      it("Custom Schema を含んで mock 関数も戻り値が詳細に推論されること", () => {
+        type ExpectedType1 = `myapp://path`;
+        expectTypeOf(routes["myapp://path"].mock()).toEqualTypeOf<ExpectedType1>();
+        expectTypeOf(routes["myapp://path"].get.mock()).toEqualTypeOf<ExpectedType1>();
+
+        type ExpectedType2 = `myapp://path/*`;
+        expectTypeOf(routes["myapp://path/[param]"].mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["myapp://path/[param]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["myapp://path/[...params]"].mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["myapp://path/[...params]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+
+        const options1 = { params: { param: "value" } };
+        type ExpectedType3 = `myapp://path/${string}`;
+        expectTypeOf(routes["myapp://path/[param]"].mock(options1)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["myapp://path/[param]"].get.mock(options1)).toEqualTypeOf<ExpectedType3>();
+
+        const options2 = { params: { params: ["value1", "value2"] } };
+        expectTypeOf(routes["myapp://path/[...params]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["myapp://path/[...params]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
+
+        const options3 = { params: { param: "value" } } as const;
+        type ExpectedType4 = `myapp://path/value`;
+        expectTypeOf(routes["myapp://path/[param]"].mock(options3)).toEqualTypeOf<ExpectedType4>();
+        expectTypeOf(routes["myapp://path/[param]"].get.mock(options3)).toEqualTypeOf<ExpectedType4>();
+
+        const options4 = { params: { params: ["value1", "value2"] } } as const;
+        type ExpectedType5 = `myapp://path/value1/value2`;
+        expectTypeOf(routes["myapp://path/[...params]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
+      });
+
+      it("2重スキーマが含まれる場合も戻り値が推論されること", () => {
+        const options1 = { params: { param: "1" } } as const;
+        type ExpectedType1 = `myapp://https://example.com/1`;
+        expectTypeOf(routes["myapp://https://example.com/[param]"].get(options1)).toEqualTypeOf<ExpectedType1>();
+
+        const options2 = { params: { params: ["1", "2"], param: "3" } } as const;
+        type ExpectedType2 = `myapp://path/1/2/https://example.com/3`;
+        expectTypeOf(
+          routes["myapp://path/[[...params]]/https://example.com/[param]"].get(options2),
+        ).toEqualTypeOf<ExpectedType2>();
       });
     });
   });

@@ -106,6 +106,7 @@ routopia は宣言的で型安全な簡素な URL の取得に焦点を当てて
 - [Base URL](#base-url)
 - [Shorthand](#shorthand)
 - [Best Practice](#best-practice)
+- [Testing](#testing)
 
 ### No Parameters
 
@@ -135,8 +136,8 @@ myRoutes["/path"].delete();
 - `[param]` のように `[]` で囲む
 - 複数のパスパラメータも指定可能
 - パスパラメータは `params` オブジェクト内で定義
-- パスパラメータの型は専用の `type` オブジェクトを利用して型アサーション(`type as 型` もしくは `<型>type`)を使って型を指定
 - パスパラメータの型は `string | number` を満たす指定が可能
+- パラメータの型は専用の `type` オブジェクトを利用して型アサーション(`type as 型` もしくは `<型>type`)を使って指定する(以降の他パラメータも同様の型指定方法)
 
 ```ts
 import { routes, type } from 'routopia';
@@ -227,6 +228,7 @@ myRoutes["/path/[[...slug]]"].get();
 
 - クエリパラメータは `queries` オブジェクト内で定義
 - クエリパラメータは `object` 以外の型を指定可能
+  - `string`, `number`, `boolean`, 配列など
 - `undefined` を含めて指定することでオプショナル(省略可能)にできる
 
 ```ts
@@ -509,3 +511,115 @@ postRoutes["/posts/[id]"].get({ params: { id: 123 } });
 > // すべてのルートを一律で検索できるが、バンドルサイズは増大する
 > ```
 > </details>
+
+### Testing
+
+MSW などのモックサーバーを利用する際も、テスト用の URL を組み立てるために `routopia` をそのまま流用することができます。  
+テスト向けの柔軟な URL 構築のために、**定義した各パラメータの型制約を緩めた特別な `mock` メソッドを提供**しています。
+
+- `mock` メソッドは、各エンドポイント直下と各 HTTP メソッド定義の直下から呼び出すことが可能
+- エンドポイント直下の `mock` メソッドの引数は、すべての HTTP メソッド定義のパラメータを引き継ぐ
+- HTTP メソッド直下の `mock` メソッドの引数は、その HTTP メソッド定義のパラメータのみを引き継ぐ
+- `mock` メソッドの引数である各パラメータに指定できる型は、定義時に指定できる範囲と同じになる
+  - [パスパラメータは `string` | `number` を満たす値](#path-parameters)
+  - [可変長なパスパラメータは `string[] | number[]` を満たす値](#catch-all-parameters)
+  - [クエリパラメータは `object` 以外を満たす値](#query-parameters)
+  - [ハッシュパラメータは `string` を満たす値](#hash)
+- `mock` メソッドの引数はすべて省略可能
+  - なおパスパラメータの指定を省略した場合は、`*` が自動的に設定される
+
+```ts
+import { routes, type } from 'routopia';
+
+const myRoutes = routes({
+  "/path/[num]": {
+    params: { num: type as number },
+    queries: {
+      req: type as string,
+      opt: type as number | undefined
+    }
+  }
+});
+
+myRoutes["/path/[num]"].mock()
+myRoutes["/path/[num]"].get.mock()
+// => "/path/*"
+
+myRoutes["/path/[num]"].mock({ params: { num: "abc" }, queries: { opt: "q" } })
+myRoutes["/path/[num]"].get.mock({ params: { num: "abc" }, queries: { opt: "q" } })
+// => "/path/abc?opt=q"
+
+Parameters<(typeof myRoutes)["/path/[num]"]["mock"]>
+Parameters<(typeof myRoutes)["/path/[num]"]["get"]["mock"]>
+// ^? [{
+//   params?: { num?: string | number } };
+//   queries?: {
+//     req?: string | number | boolean | string[]...;
+//     opt?: string | number | boolean | string[]...;
+//   };
+// }]
+```
+
+<details>
+<summary>More Examples</summary>
+
+```ts
+import { routes, type } from 'routopia';
+
+const myRoutes = routes({
+  "/path/[...strArr]": {
+    params: { strArr: type as string[] }
+  }
+});
+
+Parameters<(typeof myRoutes)["/path/[...strArr]"]["mock"]>
+Parameters<(typeof myRoutes)["/path/[...strArr]"]["get"]["mock"]>
+// ^? [{ params?: { strArr?: string[] | number[] } }]
+```
+
+```ts
+import { routes, type } from 'routopia';
+
+const myRoutes = routes({
+  "/path": {
+    get: {
+      queries: {
+        a: type as string,
+        b: type as string
+      }
+    },
+    post: {
+      queries: {
+        b: type as number,
+        c: type as number
+      }
+    }
+  }
+});
+
+Parameters<(typeof myRoutes)["/path"]["mock"]>
+// ^? [{
+//   queries?: {
+//     a?: string | number | boolean | string[]...;
+//     b?: string | number | boolean | string[]...;
+//     c?: string | number | boolean | string[]...;
+//   }
+// }]
+
+Parameters<(typeof myRoutes)["/path"]["get"]["mock"]>
+// ^? [{
+//   queries?: {
+//     a?: string | number | boolean | string[]...;
+//     b?: string | number | boolean | string[]...;
+//   }
+// }]
+
+Parameters<(typeof myRoutes)["/path"]["post"]["mock"]>
+// ^? [{
+//   queries?: {
+//     b?: string | number | boolean | string[]...;
+//     c?: string | number | boolean | string[]...;
+//   }
+// }]
+```
+</details>

@@ -1,4 +1,4 @@
-import { extractSchemaFromPath, isOptions, joinSchemaToPath, replacePathParams, stringifyQueries } from "./utilities";
+import { isOptions, replacePathParams, stringifyQueries } from "./utilities";
 
 describe("replacePathParams", () => {
   it("パスパラメータがない場合は元のパスを返すこと", () => {
@@ -43,7 +43,16 @@ describe("replacePathParams", () => {
       const path = "/path/[param]";
       const params = { param: ["1", "2"] };
 
-      expect(() => replacePathParams(path, params)).toThrowError('"param" must be not an array');
+      expect(() => replacePathParams(path, params)).toThrowError('"param" must not be an array');
+    });
+
+    it("モックモードの場合はパスパラメータが不足していてもエラーにならずワイルドカードに置換されること", () => {
+      const path = "/path/[param]";
+      const expectedPath = "/path/*";
+
+      const result = replacePathParams(path, undefined, true);
+
+      expect(result).toBe(expectedPath);
     });
   });
 
@@ -81,9 +90,18 @@ describe("replacePathParams", () => {
 
       expect(() => replacePathParams(path, params)).toThrowError('"params" is required');
     });
+
+    it("モックモードの場合はパスパラメータが不足していてもエラーにならずワイルドカードに置換されること", () => {
+      const path = "/path/[...params]";
+      const expectedPath = "/path/*";
+
+      const result = replacePathParams(path, undefined, true);
+
+      expect(result).toBe(expectedPath);
+    });
   });
 
-  describe("可変調でオプショナルなパスパラメータがある場合", () => {
+  describe("可変長でオプショナルなパスパラメータがある場合", () => {
     it("パスパラメータを置換できること", () => {
       const path = "/path/[[...params]]";
       const params = { params: ["1", "2"] };
@@ -120,6 +138,15 @@ describe("replacePathParams", () => {
 
       expect(result).toBe(expectedPath);
     });
+
+    it("モックモードの場合にパスパラメータがなければワイルドカードに置換されること", () => {
+      const path = "/path/[[...params]]";
+      const expectedPath = "/path/*";
+
+      const result = replacePathParams(path, undefined, true);
+
+      expect(result).toBe(expectedPath);
+    });
   });
 
   describe("複数のパスパラメータがある場合", () => {
@@ -138,6 +165,15 @@ describe("replacePathParams", () => {
       const params = { params: ["2", "3"] };
 
       expect(() => replacePathParams(path, params)).toThrowError('"param" is required');
+    });
+
+    it("モックモードの場合はパスパラメータが不足していてもエラーにならずワイルドカードに置換されること", () => {
+      const path = "/path/[param]/[[...params]]";
+      const expectedPath = "/path/*/*";
+
+      const result = replacePathParams(path, undefined, true);
+
+      expect(result).toBe(expectedPath);
     });
   });
 
@@ -229,47 +265,5 @@ describe("isOptions", () => {
     expect(isOptions("post")).toBe(false);
     expect(isOptions("put")).toBe(false);
     expect(isOptions("delete")).toBe(false);
-  });
-});
-
-describe("extractSchemaFromPath", () => {
-  it("スキーマが含まれていない場合、元のパスを返すこと", () => {
-    const target = "/path/to/resource";
-    const expected = { pathWithoutSchema: "/path/to/resource" };
-
-    const result = extractSchemaFromPath(target);
-
-    expect(result).toEqual(expected);
-  });
-
-  it("スキーマが含まれている場合、スキーマとパスを分離して返すこと", () => {
-    const target = "schema://path/to/resource";
-    const expected = { schema: "schema", pathWithoutSchema: "path/to/resource" };
-
-    const result = extractSchemaFromPath(target);
-
-    expect(result).toEqual(expected);
-  });
-});
-
-describe("joinSchemaToPath", () => {
-  it("スキーマがない場合、元のパスを返すこと", () => {
-    const schema = undefined;
-    const path = "/path/to/resource";
-    const expected = "/path/to/resource";
-
-    const result = joinSchemaToPath(schema, path);
-
-    expect(result).toBe(expected);
-  });
-
-  it("スキーマがある場合、スキーマとパスを結合して返すこと", () => {
-    const schema = "schema";
-    const path = "path/to/resource";
-    const expected = "schema://path/to/resource";
-
-    const result = joinSchemaToPath(schema, path);
-
-    expect(result).toBe(expected);
   });
 });
