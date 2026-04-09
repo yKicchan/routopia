@@ -1,5 +1,5 @@
 import type { ActualSchema, Empty, ExpectedSchema, Options } from "./types";
-import { isOptions, replacePathParams, stringifyQueries } from "./utilities";
+import { isOptions, replacePathParams, stringifyHash, stringifyQueries } from "./utilities";
 
 /**
  * Utility used to define parameter types in parameter schemas
@@ -33,9 +33,8 @@ export const empty: Empty = undefined;
 function method(endpoint: string, baseUrl = "", mocking = false) {
   return (options?: Options) => {
     const path = replacePathParams(endpoint, options?.params, mocking);
-    const queries =
-      options?.queries && Object.keys(options.queries).length > 0 ? `?${stringifyQueries(options.queries)}` : "";
-    const hash = options?.hash ? `#${encodeURIComponent(options.hash)}` : "";
+    const queries = stringifyQueries(options?.queries, mocking);
+    const hash = stringifyHash(options?.hash, mocking);
     return `${baseUrl}${path}${queries}${hash}`;
   };
 }

@@ -60,13 +60,24 @@ export type Options = { params?: SchemaParams; queries?: SchemaQueries; hash?: s
  *
  * ExtractParams<"/path/[[...params]]">
  * // { params: (string | number)[] }
+ *
+ * ExtractParams<"/path/[param]", true>
+ * // { param?: string | number }
  */
-type ExtractParams<Endpoint extends string> = Endpoint extends `${infer Before}[[...${infer Param}]]${infer After}`
-  ? { [K in Param]: SchemaArrayParam } & ExtractParams<Before> & ExtractParams<After>
+type ExtractParams<
+  Endpoint extends string,
+  Mocking = false,
+> = Endpoint extends `${infer Before}[[...${infer Param}]]${infer After}`
+  ? (Mocking extends true ? { [K in Param]?: SchemaArrayParam } : { [K in Param]: SchemaArrayParam }) &
+      ExtractParams<Before, Mocking> &
+      ExtractParams<After, Mocking>
   : Endpoint extends `${infer Before}[...${infer Param}]${infer After}`
-    ? { [K in Param]: SchemaArrayParam } & ExtractParams<Before> & ExtractParams<After>
+    ? (Mocking extends true ? { [K in Param]?: SchemaArrayParam } : { [K in Param]: SchemaArrayParam }) &
+        ExtractParams<Before, Mocking> &
+        ExtractParams<After, Mocking>
     : Endpoint extends `${string}[${infer Param}]${infer After}`
-      ? { [K in Param]: SchemaPrimitiveParam } & ExtractParams<After>
+      ? (Mocking extends true ? { [K in Param]?: SchemaPrimitiveParam } : { [K in Param]: SchemaPrimitiveParam }) &
+          ExtractParams<After, Mocking>
       : unknown;
 
 /**
@@ -328,7 +339,7 @@ type TrimPath<Path extends string> = Path extends `${infer Before}//${infer Afte
 
 /**
  * Replace [param] in path with actual values.
- * - If Mocking is true, replace missing parameters with `*`.
+ * - If Mocking is true, replace missing parameters with colon syntax. (e.g., ":id")
  *
  * @example
  * ReplacePathParams<"/users/[userId]/posts/[postId]", { userId: "123"; postId: "456" }>
@@ -340,8 +351,8 @@ type TrimPath<Path extends string> = Path extends `${infer Before}//${infer Afte
  * ReplacePathParams<"/path/[[...params]]", { params: ["123", "456"] }>
  * // "/path/123/456"
  *
- * ReplacePathParams<"/path/[[...params]]", {}, true>
- * // "/path/*"
+ * ReplacePathParams<"/path/[param]", {}, true>
+ * // "/path/:param"
  */
 type ReplacePathParams<
   Path extends string,
@@ -350,39 +361,28 @@ type ReplacePathParams<
 > = Path extends `${infer Before}[[...${infer Param}]]${infer After}`
   ? Param extends keyof Params
     ? Params[Param] extends SchemaArrayParam
-      ? `${ReplacePathParams<Before, Params>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params>}`
+      ? `${ReplacePathParams<Before, Params, Mocking>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params, Mocking>}`
       : never
     : Mocking extends true
-      ? `${ReplacePathParams<Before, Params>}*${ReplacePathParams<After, Params>}`
-      : `${ReplacePathParams<Before, Params>}${ReplacePathParams<After, Params>}`
+      ? `${ReplacePathParams<Before, Params, Mocking>}:${Param}*${ReplacePathParams<After, Params, Mocking>}`
+      : `${ReplacePathParams<Before, Params, Mocking>}${ReplacePathParams<After, Params, Mocking>}`
   : Path extends `${infer Before}[...${infer Param}]${infer After}`
     ? Param extends keyof Params
       ? Params[Param] extends SchemaArrayParam
-        ? `${ReplacePathParams<Before, Params>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params>}`
+        ? `${ReplacePathParams<Before, Params, Mocking>}${JoinParams<Params[Param]>}${ReplacePathParams<After, Params, Mocking>}`
         : never
       : Mocking extends true
-        ? `${ReplacePathParams<Before, Params>}*${ReplacePathParams<After, Params>}`
+        ? `${ReplacePathParams<Before, Params, Mocking>}:${Param}+${ReplacePathParams<After, Params, Mocking>}`
         : never
     : Path extends `${infer Before}[${infer Param}]${infer After}`
       ? Param extends keyof Params
         ? Params[Param] extends SchemaPrimitiveParam
-          ? `${Before}${Params[Param]}${ReplacePathParams<After, Params>}`
+          ? `${Before}${Params[Param]}${ReplacePathParams<After, Params, Mocking>}`
           : never
         : Mocking extends true
-          ? `${Before}*${ReplacePathParams<After, Params>}`
+          ? `${Before}:${Param}${ReplacePathParams<After, Params, Mocking>}`
           : never
       : Path;
-
-/**
- * Utility type that removes optional catch-all parameters from the path
- *
- * @example
- * ExcludeOptionalCatchAll<"/path/[[...params]]">
- * // "/path/"
- */
-type ExcludeOptionalCatchAll<Path extends string> = Path extends `${infer Before}[[...${string}]]${infer After}`
-  ? `${Before}${ExcludeOptionalCatchAll<After>}`
-  : Path;
 
 /**
  * Applies path parameters if they exist
@@ -395,37 +395,20 @@ type ExcludeOptionalCatchAll<Path extends string> = Path extends `${infer Before
  * ApplyParams<"/">
  * // "/"
  *
- * ApplyParams<"/path/[[...params]]", {}, true>
- * // "/path/*"
+ * ApplyParams<"/path/[param]", {}, true>
+ * // "/path/:param"
  */
 type ApplyParams<
   Path extends string,
-  Params extends Nullable<Optional<ExtractParams<Path>>>,
+  Params extends Nullable<Optional<ExtractParams<Path, Mocking>>>,
   Mocking = false,
 > = SafeTrimPath<
   keyof Params extends never
-    ? Mocking extends true
-      ? ApplyWildcard<Path>
-      : ExcludeOptionalCatchAll<Path>
+    ? ReplacePathParams<Path, EmptyObject, Mocking>
     : Params extends SchemaParams
       ? ReplacePathParams<Path, Params, Mocking>
       : never
 >;
-
-/**
- * Replace all path parameters with `*`.
- *
- * @example
- * ApplyWildcard<"/path/[...params]">
- * // "/path/*"
- */
-type ApplyWildcard<Path extends string> = Path extends `${infer Before}[[...${string}]]${infer After}`
-  ? `${ApplyWildcard<Before>}*${ApplyWildcard<After>}`
-  : Path extends `${infer Before}[...${string}]${infer After}`
-    ? `${ApplyWildcard<Before>}*${ApplyWildcard<After>}`
-    : Path extends `${infer Before}[${string}]${infer After}`
-      ? `${Before}*${ApplyWildcard<After>}`
-      : Path;
 
 /**
  * Applies query parameters if they exist
@@ -467,7 +450,7 @@ type ApplyHash<Path extends string, Hash extends Nullable<string>> = Hash extend
  */
 type ExpectedPath<
   Path extends string,
-  Params extends Nullable<Optional<ExtractParams<Path>>> = undefined,
+  Params extends Nullable<Optional<ExtractParams<Path, Mocking>>> = undefined,
   Queries extends Nullable<SchemaQueries> = undefined,
   Hash extends Nullable<string> = undefined,
   Mocking = false,
@@ -489,7 +472,9 @@ type ExpectedPath<
  */
 type ActualReturn<Endpoint extends string, Options, Mocking = false> = ExpectedPath<
   Endpoint,
-  Options extends { params: infer Params extends Optional<ExtractParams<Endpoint>> } ? Params : undefined,
+  Options extends { params: infer Params extends Nullable<Optional<ExtractParams<Endpoint, Mocking>>> }
+    ? Params
+    : undefined,
   Options extends { queries?: infer Queries extends Nullable<SchemaQueries> } ? Queries : undefined,
   Options extends { hash: infer Hash extends string } ? Hash : undefined,
   Mocking

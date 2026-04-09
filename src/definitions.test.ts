@@ -38,6 +38,15 @@ describe("routes", () => {
         },
       },
     },
+    "/params/[param]/[...params1]/[[...params2]]": {
+      get: {
+        params: {
+          param: schema.type as string,
+          params1: schema.type as string[],
+          params2: schema.type as string[],
+        },
+      },
+    },
     "/queries/required": {
       get: {
         queries: {
@@ -273,34 +282,52 @@ describe("routes", () => {
       expect(url).toBe(expectedUrl);
     });
 
-    it("mock 関数はパスパラメータを省略してワイルドカードが設定された URL を生成できること", () => {
-      const expectedUrl1 = "/params/*";
+    it("パスパラメータはエンコードされること", () => {
+      const options = {
+        params: {
+          param: "あ",
+          params1: ["か", "き"],
+          params2: ["さ", "し"],
+        },
+      };
+      const expectedUrl = "/params/%E3%81%82/%E3%81%8B/%E3%81%8D/%E3%81%95/%E3%81%97";
+
+      const url = routes["/params/[param]/[...params1]/[[...params2]]"].get(options);
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("mock 関数はパスパラメータを省略してコロン形式のキーマッチングが設定された URL を生成できること", () => {
+      const expectedUrl1 = "/params/:param";
       expect(routes["/params/[param]"].mock()).toBe(expectedUrl1);
       expect(routes["/params/[param]"].get.mock()).toBe(expectedUrl1);
 
-      const expectedUrl2 = "/params/*/*";
+      const expectedUrl2 = "/params/:param1/:param2";
       expect(routes["/params/[param1]/[param2]"].mock()).toBe(expectedUrl2);
       expect(routes["/params/[param1]/[param2]"].get.mock()).toBe(expectedUrl2);
 
-      expect(routes["/params/[...params]"].mock()).toBe(expectedUrl1);
-      expect(routes["/params/[...params]"].get.mock()).toBe(expectedUrl1);
-      expect(routes["/params/[[...params]]"].mock()).toBe(expectedUrl1);
-      expect(routes["/params/[[...params]]"].get.mock()).toBe(expectedUrl1);
+      const expectedUrl3 = "/params/:params+";
+      expect(routes["/params/[...params]"].mock()).toBe(expectedUrl3);
+      expect(routes["/params/[...params]"].get.mock()).toBe(expectedUrl3);
+
+      const expectedUrl4 = "/params/:params*";
+      expect(routes["/params/[[...params]]"].mock()).toBe(expectedUrl4);
+      expect(routes["/params/[[...params]]"].get.mock()).toBe(expectedUrl4);
     });
 
-    it("mock 関数は自由にパスパラメータを指定して URL を生成できること", () => {
-      const options1 = { params: { param: 123 } };
-      const expectedUrl1 = "/params/123";
+    it("mock 関数は自由にパスパラメータを指定して URL を生成でき、エンコードされないこと", () => {
+      const options1 = { params: { param: "1 2 3" } };
+      const expectedUrl1 = "/params/1 2 3";
       expect(routes["/params/[param]"].mock(options1)).toBe(expectedUrl1);
       expect(routes["/params/[param]"].get.mock(options1)).toBe(expectedUrl1);
 
-      const options2 = { params: { param1: 1, param2: 2 } };
-      const expectedUrl2 = "/params/1/2";
+      const options2 = { params: { param1: "あ", param2: 2 } };
+      const expectedUrl2 = "/params/あ/2";
       expect(routes["/params/[param1]/[param2]"].mock(options2)).toBe(expectedUrl2);
       expect(routes["/params/[param1]/[param2]"].get.mock(options2)).toBe(expectedUrl2);
 
-      const options3 = { params: { params: [1, 2, 3] } };
-      const expectedUrl3 = "/params/1/2/3";
+      const options3 = { params: { params: [1, "あいう", 2] } };
+      const expectedUrl3 = "/params/1/あいう/2";
       expect(routes["/params/[...params]"].mock(options3)).toBe(expectedUrl3);
       expect(routes["/params/[...params]"].get.mock(options3)).toBe(expectedUrl3);
       expect(routes["/params/[[...params]]"].mock(options3)).toBe(expectedUrl3);
@@ -309,7 +336,7 @@ describe("routes", () => {
   });
 
   describe("クエリパラメータが宣言されている場合", () => {
-    it("クエリパラメータ付きの URL を生成できること", () => {
+    it("ソートされたクエリパラメータ付きの URL を生成できること", () => {
       const options = {
         queries: {
           string: "string",
@@ -318,7 +345,7 @@ describe("routes", () => {
           array: ["string"],
         },
       };
-      const expectedUrl = `/queries/required?${stringifyQueries(options.queries)}`;
+      const expectedUrl = "/queries/required?array=string&boolean=true&number=1&string=string";
 
       const url = routes["/queries/required"].get(options);
 
@@ -332,7 +359,7 @@ describe("routes", () => {
           number: 1,
         },
       };
-      const expectedUrl = `/queries/both?${stringifyQueries(options.queries)}`;
+      const expectedUrl = "/queries/both?number=1&string=string";
 
       const url = routes["/queries/both"].get(options);
 
@@ -353,7 +380,7 @@ describe("routes", () => {
           string: "string with space",
         },
       };
-      const expectedUrl = `/queries/optional?${stringifyQueries(options.queries)}`;
+      const expectedUrl = "/queries/optional?string=string+with+space";
 
       const url = routes["/queries/optional"].get(options);
 
@@ -386,16 +413,17 @@ describe("routes", () => {
       expect(url6).toBe(expectedUrl3);
     });
 
-    it("mock 関数は自由にクエリパラメータを指定して URL を生成できること", () => {
+    it("mock 関数は自由にクエリパラメータを指定して URL を生成でき、エンコードされないこと", () => {
       const options = {
         queries: {
           string: 123,
           number: true,
           boolean: [1, 2, 3],
-          array: "string",
+          array: "s t r",
         },
       };
-      const expectedUrl1 = `/queries/required?${stringifyQueries(options.queries)}`;
+      const expectedQueryString = "?array=s t r&boolean=1&boolean=2&boolean=3&number=true&string=123";
+      const expectedUrl1 = `/queries/required${expectedQueryString}`;
 
       const url1 = routes["/queries/required"].mock(options);
       const url2 = routes["/queries/required"].get.mock(options);
@@ -403,7 +431,7 @@ describe("routes", () => {
       expect(url1).toBe(expectedUrl1);
       expect(url2).toBe(expectedUrl1);
 
-      const expectedUrl2 = `/queries/both?${stringifyQueries(options.queries)}`;
+      const expectedUrl2 = `/queries/both${expectedQueryString}`;
 
       const url3 = routes["/queries/both"].mock(options);
       const url4 = routes["/queries/both"].get.mock(options);
@@ -411,7 +439,7 @@ describe("routes", () => {
       expect(url3).toBe(expectedUrl2);
       expect(url4).toBe(expectedUrl2);
 
-      const expectedUrl3 = `/queries/optional?${stringifyQueries(options.queries)}`;
+      const expectedUrl3 = `/queries/optional${expectedQueryString}`;
 
       const url5 = routes["/queries/optional"].mock(options);
       const url6 = routes["/queries/optional"].get.mock(options);
@@ -456,11 +484,11 @@ describe("routes", () => {
       expect(url2).toBe(expectedUrl);
     });
 
-    it("mock 関数は自由にハッシュを指定して URL を生成できること", () => {
+    it("mock 関数は自由にハッシュを指定して URL を生成でき、エンコードされないこと", () => {
       const options = {
-        hash: "unknown",
+        hash: "un known",
       };
-      const expectedUrl = "/hash#unknown";
+      const expectedUrl = "/hash#un known";
 
       const url1 = routes["/hash"].mock(options);
       const url2 = routes["/hash"].get.mock(options);
@@ -477,7 +505,7 @@ describe("routes", () => {
         queries: { optional: "optional" },
         hash: "hash" as const,
       };
-      const expectedUrl = `/all/1?${stringifyQueries(options.queries)}#hash`;
+      const expectedUrl = "/all/1?optional=optional#hash";
 
       const url = routes["/all/[param]"].get(options);
 
@@ -494,7 +522,7 @@ describe("routes", () => {
     });
 
     it("mock 関数はすべてのパラメータを省略して URL を生成できること", () => {
-      const expectedUrl = "/all/*";
+      const expectedUrl = "/all/:param";
 
       const url1 = routes["/all/[param]"].mock();
       const url2 = routes["/all/[param]"].get.mock();
@@ -509,7 +537,7 @@ describe("routes", () => {
         queries: { optional: true },
         hash: "unknown",
       };
-      const expectedUrl = `/all/123?${stringifyQueries(options.queries)}#unknown`;
+      const expectedUrl = "/all/123?optional=true#unknown";
 
       const url1 = routes["/all/[param]"].mock(options);
       const url2 = routes["/all/[param]"].get.mock(options);
@@ -544,7 +572,7 @@ describe("routes", () => {
         queries: { required: "required" },
         hash: "hash" as const,
       };
-      const expectedUrl = `/short/all/1?${stringifyQueries(options.queries)}#hash`;
+      const expectedUrl = "/short/all/1?required=required#hash";
 
       const url = routes["/short/all/[param]"].get(options);
 
@@ -560,17 +588,21 @@ describe("routes", () => {
     });
 
     it("mock 関数はすべてのパラメータを省略して URL を生成できること", () => {
-      const expectedUrl = "/short/all/*";
+      const expectedUrl1 = "/short/all/:param";
 
       const url1 = routes["/short/all/[param]"].mock();
       const url2 = routes["/short/all/[param]"].get.mock();
+
+      expect(url1).toBe(expectedUrl1);
+      expect(url2).toBe(expectedUrl1);
+
+      const expectedUrl2 = "/short/all/:params*";
+
       const url3 = routes["/short/all/[[...params]]"].mock();
       const url4 = routes["/short/all/[[...params]]"].get.mock();
 
-      expect(url1).toBe(expectedUrl);
-      expect(url2).toBe(expectedUrl);
-      expect(url3).toBe(expectedUrl);
-      expect(url4).toBe(expectedUrl);
+      expect(url3).toBe(expectedUrl2);
+      expect(url4).toBe(expectedUrl2);
     });
 
     it("mock 関数はすべてのパラメータを自由に指定して URL を生成できること", () => {
@@ -579,7 +611,7 @@ describe("routes", () => {
         queries: { required: 123 },
         hash: "unknown",
       };
-      const expectedUrl1 = `/short/all/123?${stringifyQueries(options1.queries)}#unknown`;
+      const expectedUrl1 = "/short/all/123?required=123#unknown";
 
       const url1 = routes["/short/all/[param]"].mock(options1);
       const url2 = routes["/short/all/[param]"].get.mock(options1);
@@ -592,7 +624,7 @@ describe("routes", () => {
         queries: { optional: 123 },
         hash: "unknown",
       };
-      const expectedUrl2 = `/short/all/1/2/3?${stringifyQueries(options2.queries)}#unknown`;
+      const expectedUrl2 = "/short/all/1/2/3?optional=123#unknown";
 
       const url3 = routes["/short/all/[[...params]]"].mock(options2);
       const url4 = routes["/short/all/[[...params]]"].get.mock(options2);
@@ -625,7 +657,7 @@ describe("routes: baseUrl", () => {
       queries: { q: "query" },
       hash: "hash",
     };
-    const expectedUrl = `${baseUrl}/path/1?${stringifyQueries(options.queries)}#hash`;
+    const expectedUrl = `${baseUrl}/path/1${stringifyQueries(options.queries)}#hash`;
 
     const url = routes["/path/[param]"].get(options);
 
@@ -633,7 +665,7 @@ describe("routes: baseUrl", () => {
   });
 
   it("mock 関数も baseUrl がついた URL を生成できること", () => {
-    const expectedUrl1 = `${baseUrl}/path/*`;
+    const expectedUrl1 = `${baseUrl}/path/:param`;
 
     const url1 = routes["/path/[param]"].mock();
     const url2 = routes["/path/[param]"].get.mock();
@@ -646,7 +678,7 @@ describe("routes: baseUrl", () => {
       queries: { q: 456 },
       hash: "hash",
     };
-    const expectedUrl2 = `${baseUrl}/path/123?${stringifyQueries(options.queries)}#hash`;
+    const expectedUrl2 = `${baseUrl}/path/123${stringifyQueries(options.queries, true)}#hash`;
 
     const url3 = routes["/path/[param]"].mock(options);
     const url4 = routes["/path/[param]"].get.mock(options);
@@ -734,7 +766,7 @@ describe("routes: custom scheme", () => {
       expect(url1).toBe(expectedUrl1);
       expect(url2).toBe(expectedUrl1);
 
-      const expectedUrl2 = "schema://params/*";
+      const expectedUrl2 = "schema://params/:param";
 
       const url3 = routes["schema://params/[param]"].mock();
       const url4 = routes["schema://params/[param]"].get.mock();
@@ -745,10 +777,14 @@ describe("routes: custom scheme", () => {
 
       expect(url3).toBe(expectedUrl2);
       expect(url4).toBe(expectedUrl2);
-      expect(url5).toBe(expectedUrl2);
-      expect(url6).toBe(expectedUrl2);
-      expect(url7).toBe(expectedUrl2);
-      expect(url8).toBe(expectedUrl2);
+
+      const expectedUrl3 = "schema://params/:params+";
+      expect(url5).toBe(expectedUrl3);
+      expect(url6).toBe(expectedUrl3);
+
+      const expectedUrl4 = "schema://params/:params*";
+      expect(url7).toBe(expectedUrl4);
+      expect(url8).toBe(expectedUrl4);
     });
 
     it("2重スキーマもスラッシュが変わらずに URL を生成できること", () => {
@@ -843,7 +879,7 @@ describe("routes: custom scheme", () => {
       expect(url1).toBe(expectedUrl1);
       expect(url2).toBe(expectedUrl1);
 
-      const expectedUrl2 = `${baseUrl}params/*`;
+      const expectedUrl2 = `${baseUrl}params/:param`;
 
       const url3 = routes["params/[param]"].mock();
       const url4 = routes["params/[param]"].get.mock();
@@ -854,10 +890,14 @@ describe("routes: custom scheme", () => {
 
       expect(url3).toBe(expectedUrl2);
       expect(url4).toBe(expectedUrl2);
-      expect(url5).toBe(expectedUrl2);
-      expect(url6).toBe(expectedUrl2);
-      expect(url7).toBe(expectedUrl2);
-      expect(url8).toBe(expectedUrl2);
+
+      const expectedUrl3 = `${baseUrl}params/:params+`;
+      expect(url5).toBe(expectedUrl3);
+      expect(url6).toBe(expectedUrl3);
+
+      const expectedUrl4 = `${baseUrl}params/:params*`;
+      expect(url7).toBe(expectedUrl4);
+      expect(url8).toBe(expectedUrl4);
     });
   });
 });
