@@ -409,10 +409,10 @@ describe("routes", () => {
       });
 
       it("mock 関数も戻り値が詳細に推論されること", () => {
-        expectTypeOf(routes["/methods/[param]"].mock()).toEqualTypeOf<"/methods/*">();
-        expectTypeOf(routes["/methods/[param]"].get.mock()).toEqualTypeOf<"/methods/*">();
-        expectTypeOf(routes["/short/[param]"].mock()).toEqualTypeOf<"/short/*">();
-        expectTypeOf(routes["/short/[param]"].get.mock()).toEqualTypeOf<"/short/*">();
+        expectTypeOf(routes["/methods/[param]"].mock()).toEqualTypeOf<"/methods/:param">();
+        expectTypeOf(routes["/methods/[param]"].get.mock()).toEqualTypeOf<"/methods/:param">();
+        expectTypeOf(routes["/short/[param]"].mock()).toEqualTypeOf<"/short/:param">();
+        expectTypeOf(routes["/short/[param]"].get.mock()).toEqualTypeOf<"/short/:param">();
 
         const options1 = { params: { param: "value" } };
 
@@ -504,31 +504,27 @@ describe("routes", () => {
       });
 
       it("mock 関数も戻り値が詳細に推論されること", () => {
-        expectTypeOf(routes["/methods/[param1]/[param2]"].mock()).toEqualTypeOf<"/methods/*/*">();
-        expectTypeOf(routes["/methods/[param1]/[param2]"].get.mock()).toEqualTypeOf<"/methods/*/*">();
-        expectTypeOf(routes["/short/[param1]/[param2]"].mock()).toEqualTypeOf<"/short/*/*">();
-        expectTypeOf(routes["/short/[param1]/[param2]"].get.mock()).toEqualTypeOf<"/short/*/*">();
+        expectTypeOf(routes["/methods/[param1]/[param2]"].mock()).toEqualTypeOf<"/methods/:param1/:param2">();
+        expectTypeOf(routes["/methods/[param1]/[param2]"].get.mock()).toEqualTypeOf<"/methods/:param1/:param2">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].mock()).toEqualTypeOf<"/short/:param1/:param2">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].get.mock()).toEqualTypeOf<"/short/:param1/:param2">();
 
-        const options1 = { params: { param1: "value", param2: 123 } };
-        const options2 = { params: { param1: "value", param2: 123 } } as const;
+        const options1 = { params: { param1: "value" } };
+        const options2 = { params: { param1: "value" } } as const;
 
-        expectTypeOf(
-          routes["/methods/[param1]/[param2]"].mock(options1),
-        ).toEqualTypeOf<`/methods/${string}/${number}`>();
+        expectTypeOf(routes["/methods/[param1]/[param2]"].mock(options1)).toEqualTypeOf<`/methods/${string}/:param2`>();
         expectTypeOf(
           routes["/methods/[param1]/[param2]"].get.mock(options1),
-        ).toEqualTypeOf<`/methods/${string}/${number}`>();
+        ).toEqualTypeOf<`/methods/${string}/:param2`>();
 
-        expectTypeOf(routes["/methods/[param1]/[param2]"].mock(options2)).toEqualTypeOf<"/methods/value/123">();
-        expectTypeOf(routes["/methods/[param1]/[param2]"].get.mock(options2)).toEqualTypeOf<"/methods/value/123">();
+        expectTypeOf(routes["/methods/[param1]/[param2]"].mock(options2)).toEqualTypeOf<"/methods/value/:param2">();
+        expectTypeOf(routes["/methods/[param1]/[param2]"].get.mock(options2)).toEqualTypeOf<"/methods/value/:param2">();
 
-        expectTypeOf(routes["/short/[param1]/[param2]"].mock(options1)).toEqualTypeOf<`/short/${string}/${number}`>();
-        expectTypeOf(
-          routes["/short/[param1]/[param2]"].get.mock(options1),
-        ).toEqualTypeOf<`/short/${string}/${number}`>();
+        expectTypeOf(routes["/short/[param1]/[param2]"].mock(options1)).toEqualTypeOf<`/short/${string}/:param2`>();
+        expectTypeOf(routes["/short/[param1]/[param2]"].get.mock(options1)).toEqualTypeOf<`/short/${string}/:param2`>();
 
-        expectTypeOf(routes["/short/[param1]/[param2]"].mock(options2)).toEqualTypeOf<"/short/value/123">();
-        expectTypeOf(routes["/short/[param1]/[param2]"].get.mock(options2)).toEqualTypeOf<"/short/value/123">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].mock(options2)).toEqualTypeOf<"/short/value/:param2">();
+        expectTypeOf(routes["/short/[param1]/[param2]"].get.mock(options2)).toEqualTypeOf<"/short/value/:param2">();
       });
     });
 
@@ -581,10 +577,10 @@ describe("routes", () => {
       });
 
       it("mock 関数も戻り値が詳細に推論されること", () => {
-        expectTypeOf(routes["/methods/[...params]"].mock()).toEqualTypeOf<"/methods/*">();
-        expectTypeOf(routes["/methods/[...params]"].get.mock()).toEqualTypeOf<"/methods/*">();
-        expectTypeOf(routes["/short/[...params]"].mock()).toEqualTypeOf<"/short/*">();
-        expectTypeOf(routes["/short/[...params]"].get.mock()).toEqualTypeOf<"/short/*">();
+        expectTypeOf(routes["/methods/[...params]"].mock()).toEqualTypeOf<"/methods/:params+">();
+        expectTypeOf(routes["/methods/[...params]"].get.mock()).toEqualTypeOf<"/methods/:params+">();
+        expectTypeOf(routes["/short/[...params]"].mock()).toEqualTypeOf<"/short/:params+">();
+        expectTypeOf(routes["/short/[...params]"].get.mock()).toEqualTypeOf<"/short/:params+">();
 
         const options1 = { params: { params: ["value", 123] } };
 
@@ -661,10 +657,10 @@ describe("routes", () => {
       });
 
       it("mock 関数も戻り値が詳細に推論されること", () => {
-        expectTypeOf(routes["/methods/[[...params]]"].mock()).toEqualTypeOf<"/methods/*">();
-        expectTypeOf(routes["/methods/[[...params]]"].get.mock()).toEqualTypeOf<"/methods/*">();
-        expectTypeOf(routes["/short/[[...params]]"].mock()).toEqualTypeOf<"/short/*">();
-        expectTypeOf(routes["/short/[[...params]]"].get.mock()).toEqualTypeOf<"/short/*">();
+        expectTypeOf(routes["/methods/[[...params]]"].mock()).toEqualTypeOf<"/methods/:params*">();
+        expectTypeOf(routes["/methods/[[...params]]"].get.mock()).toEqualTypeOf<"/methods/:params*">();
+        expectTypeOf(routes["/short/[[...params]]"].mock()).toEqualTypeOf<"/short/:params*">();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock()).toEqualTypeOf<"/short/:params*">();
 
         const options1 = { params: { params: ["value", 123] } };
 
@@ -987,7 +983,7 @@ describe("routes", () => {
       });
 
       it("mock 関数も戻り値が詳細に推論されること", () => {
-        type ExpectedType1 = `/all/*${string}`;
+        type ExpectedType1 = `/all/:param${string}`;
         expectTypeOf(routes["/all/[param]"].mock()).toEqualTypeOf<ExpectedType1>();
         expectTypeOf(routes["/all/[param]"].get.mock()).toEqualTypeOf<ExpectedType1>();
 
@@ -1104,6 +1100,13 @@ describe("routes", () => {
             },
           },
         },
+        "/[p1]/[...p2]/[[...p3]]": {
+          params: {
+            p1: schema.type as string,
+            p2: schema.type as string[],
+            p3: schema.type as string[],
+          },
+        },
       });
 
       it("トップレベルの mock 関数は各 HTTP メソッドを包括した引数を受けること", () => {
@@ -1126,9 +1129,9 @@ describe("routes", () => {
       });
 
       it("トップレベルの mock 関数は HTTP メソッドが複数あっても戻り値が詳細に推論されること", () => {
-        expectTypeOf(routes["/[param]"].mock()).toEqualTypeOf<`/*${string}`>();
-        expectTypeOf(routes["/[...params]"].mock()).toEqualTypeOf<`/*`>();
-        expectTypeOf(routes["/[[...params]]"].mock()).toEqualTypeOf<`/*`>();
+        expectTypeOf(routes["/[param]"].mock()).toEqualTypeOf<`/:param${string}`>();
+        expectTypeOf(routes["/[...params]"].mock()).toEqualTypeOf<`/:params+`>();
+        expectTypeOf(routes["/[[...params]]"].mock()).toEqualTypeOf<`/:params*`>();
 
         const options1 = { params: { param: "value" }, queries: { a: "a", b: "b" }, hash: "hash" };
         expectTypeOf(routes["/[param]"].mock(options1)).toEqualTypeOf<`/${string}?${string}#${string}`>();
@@ -1164,15 +1167,17 @@ describe("routes", () => {
       });
 
       it("HTTP メソッドごとの mock 関数も戻り値が詳細に推論されること", () => {
-        type ExpectedType1 = `/*${string}`;
+        type ExpectedType1 = `/:param${string}`;
         expectTypeOf(routes["/[param]"].get.mock()).toEqualTypeOf<ExpectedType1>();
         expectTypeOf(routes["/[param]"].post.mock()).toEqualTypeOf<ExpectedType1>();
 
-        type ExpectedType2 = `/*`;
+        type ExpectedType2 = `/:params+`;
         expectTypeOf(routes["/[...params]"].get.mock()).toEqualTypeOf<ExpectedType2>();
         expectTypeOf(routes["/[...params]"].put.mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["/[[...params]]"].delete.mock()).toEqualTypeOf<ExpectedType2>();
+
+        type ExpectedType3 = `/:params*`;
+        expectTypeOf(routes["/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/[[...params]]"].delete.mock()).toEqualTypeOf<ExpectedType3>();
 
         const options1 = { params: { param: "value" }, queries: { a: "a", x: "x" }, hash: "hash" };
         expectTypeOf(routes["/[param]"].get.mock(options1)).toEqualTypeOf<`/${string}?${string}#${string}`>();
@@ -1298,99 +1303,104 @@ describe("routes", () => {
       });
 
       it("Base URL を含んで mock 関数も戻り値が詳細に推論されること", () => {
-        type ExpectedType1 = `https://api.example.com/path`;
-        expectTypeOf(routes["/path"].mock()).toEqualTypeOf<ExpectedType1>();
-        expectTypeOf(routes["/path"].get.mock()).toEqualTypeOf<ExpectedType1>();
+        type Base<T extends string> = `https://api.example.com${T}`;
+        expectTypeOf(routes["/path"].mock()).toEqualTypeOf<Base<`/path`>>();
+        expectTypeOf(routes["/path"].get.mock()).toEqualTypeOf<Base<`/path`>>();
 
-        type ExpectedType2 = `https://api.example.com/path/*`;
-        expectTypeOf(routes["/path/[param]"].mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["/path/[param]"].get.mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["/path/[...params]"].mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["/path/[...params]"].get.mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["/path/[[...params]]"].mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["/path/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+        expectTypeOf(routes["/path/[param]"].mock()).toEqualTypeOf<Base<`/path/:param`>>();
+        expectTypeOf(routes["/path/[param]"].get.mock()).toEqualTypeOf<Base<`/path/:param`>>();
+        expectTypeOf(routes["/path/[...params]"].mock()).toEqualTypeOf<Base<`/path/:params+`>>();
+        expectTypeOf(routes["/path/[...params]"].get.mock()).toEqualTypeOf<Base<`/path/:params+`>>();
+        expectTypeOf(routes["/path/[[...params]]"].mock()).toEqualTypeOf<Base<`/path/:params*`>>();
+        expectTypeOf(routes["/path/[[...params]]"].get.mock()).toEqualTypeOf<Base<`/path/:params*`>>();
 
         const options1 = { params: { param: "value" } };
-        type ExpectedType3 = `https://api.example.com/path/${string}`;
-        expectTypeOf(routes["/path/[param]"].mock(options1)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["/path/[param]"].get.mock(options1)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/path/[param]"].mock(options1)).toEqualTypeOf<Base<`/path/${string}`>>();
+        expectTypeOf(routes["/path/[param]"].get.mock(options1)).toEqualTypeOf<Base<`/path/${string}`>>();
 
         const options2 = { params: { params: ["value1", "value2"] } };
-        expectTypeOf(routes["/path/[...params]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["/path/[...params]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["/path/[[...params]]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["/path/[[...params]]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["/path/[...params]"].mock(options2)).toEqualTypeOf<Base<`/path/${string}`>>();
+        expectTypeOf(routes["/path/[...params]"].get.mock(options2)).toEqualTypeOf<Base<`/path/${string}`>>();
+        expectTypeOf(routes["/path/[[...params]]"].mock(options2)).toEqualTypeOf<Base<`/path/${string}`>>();
+        expectTypeOf(routes["/path/[[...params]]"].get.mock(options2)).toEqualTypeOf<Base<`/path/${string}`>>();
 
         const options3 = { params: { param: "value" } } as const;
-        type ExpectedType4 = `https://api.example.com/path/value`;
-        expectTypeOf(routes["/path/[param]"].mock(options3)).toEqualTypeOf<ExpectedType4>();
-        expectTypeOf(routes["/path/[param]"].get.mock(options3)).toEqualTypeOf<ExpectedType4>();
+        expectTypeOf(routes["/path/[param]"].mock(options3)).toEqualTypeOf<Base<`/path/value`>>();
+        expectTypeOf(routes["/path/[param]"].get.mock(options3)).toEqualTypeOf<Base<`/path/value`>>();
 
         const options4 = { params: { params: ["value1", "value2"] } } as const;
-        type ExpectedType5 = `https://api.example.com/path/value1/value2`;
-        expectTypeOf(routes["/path/[...params]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
-        expectTypeOf(routes["/path/[...params]"].get.mock(options4)).toEqualTypeOf<ExpectedType5>();
-        expectTypeOf(routes["/path/[[...params]]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
-        expectTypeOf(routes["/path/[[...params]]"].get.mock(options4)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["/path/[...params]"].mock(options4)).toEqualTypeOf<Base<`/path/value1/value2`>>();
+        expectTypeOf(routes["/path/[...params]"].get.mock(options4)).toEqualTypeOf<Base<`/path/value1/value2`>>();
+        expectTypeOf(routes["/path/[[...params]]"].mock(options4)).toEqualTypeOf<Base<`/path/value1/value2`>>();
+        expectTypeOf(routes["/path/[[...params]]"].get.mock(options4)).toEqualTypeOf<Base<`/path/value1/value2`>>();
 
         const options5 = {
           params: { param: "value" },
           queries: { q: "query" },
           hash: "hash",
         };
-        type ExpectedType6 = `https://api.example.com/path/all/${string}?${string}#${string}`;
-        expectTypeOf(routes["/path/all/[param]"].mock(options5)).toEqualTypeOf<ExpectedType6>();
-        expectTypeOf(routes["/path/all/[param]"].get.mock(options5)).toEqualTypeOf<ExpectedType6>();
+        expectTypeOf(routes["/path/all/[param]"].mock(options5)).toEqualTypeOf<
+          Base<`/path/all/${string}?${string}#${string}`>
+        >();
+        expectTypeOf(routes["/path/all/[param]"].get.mock(options5)).toEqualTypeOf<
+          Base<`/path/all/${string}?${string}#${string}`>
+        >();
 
         const options6 = {
           params: { param: "value" },
           queries: { q: "query" },
           hash: "hash",
         } as const;
-        type ExpectedType7 = `https://api.example.com/path/all/value?${string}#hash`;
-        expectTypeOf(routes["/path/all/[param]"].mock(options6)).toEqualTypeOf<ExpectedType7>();
-        expectTypeOf(routes["/path/all/[param]"].get.mock(options6)).toEqualTypeOf<ExpectedType7>();
+        expectTypeOf(routes["/path/all/[param]"].mock(options6)).toEqualTypeOf<
+          Base<`/path/all/value?${string}#hash`>
+        >();
+        expectTypeOf(routes["/path/all/[param]"].get.mock(options6)).toEqualTypeOf<
+          Base<`/path/all/value?${string}#hash`>
+        >();
 
-        type ExpectedType8 = `https://api.example.com/short`;
-        expectTypeOf(routes["/short"].mock()).toEqualTypeOf<ExpectedType8>();
-        expectTypeOf(routes["/short"].get.mock()).toEqualTypeOf<ExpectedType8>();
+        expectTypeOf(routes["/short"].mock()).toEqualTypeOf<Base<`/short`>>();
+        expectTypeOf(routes["/short"].get.mock()).toEqualTypeOf<Base<`/short`>>();
 
-        type ExpectedType9 = `https://api.example.com/short/*`;
-        expectTypeOf(routes["/short/[param]"].mock()).toEqualTypeOf<ExpectedType9>();
-        expectTypeOf(routes["/short/[param]"].get.mock()).toEqualTypeOf<ExpectedType9>();
-        expectTypeOf(routes["/short/[...params]"].mock()).toEqualTypeOf<ExpectedType9>();
-        expectTypeOf(routes["/short/[...params]"].get.mock()).toEqualTypeOf<ExpectedType9>();
-        expectTypeOf(routes["/short/[[...params]]"].mock()).toEqualTypeOf<ExpectedType9>();
-        expectTypeOf(routes["/short/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType9>();
+        expectTypeOf(routes["/short/[param]"].mock()).toEqualTypeOf<Base<`/short/:param`>>();
+        expectTypeOf(routes["/short/[param]"].get.mock()).toEqualTypeOf<Base<`/short/:param`>>();
+        expectTypeOf(routes["/short/[...params]"].mock()).toEqualTypeOf<Base<`/short/:params+`>>();
+        expectTypeOf(routes["/short/[...params]"].get.mock()).toEqualTypeOf<Base<`/short/:params+`>>();
+        expectTypeOf(routes["/short/[[...params]]"].mock()).toEqualTypeOf<Base<`/short/:params*`>>();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock()).toEqualTypeOf<Base<`/short/:params*`>>();
 
         const options7 = { params: { param: "value" } };
-        type ExpectedType10 = `https://api.example.com/short/${string}`;
-        expectTypeOf(routes["/short/[param]"].mock(options7)).toEqualTypeOf<ExpectedType10>();
-        expectTypeOf(routes["/short/[param]"].get.mock(options7)).toEqualTypeOf<ExpectedType10>();
+        expectTypeOf(routes["/short/[param]"].mock(options7)).toEqualTypeOf<Base<`/short/${string}`>>();
+        expectTypeOf(routes["/short/[param]"].get.mock(options7)).toEqualTypeOf<Base<`/short/${string}`>>();
 
         const options8 = { params: { params: ["value1", "value2"] } };
-        expectTypeOf(routes["/short/[...params]"].mock(options8)).toEqualTypeOf<ExpectedType10>();
-        expectTypeOf(routes["/short/[...params]"].get.mock(options8)).toEqualTypeOf<ExpectedType10>();
-        expectTypeOf(routes["/short/[[...params]]"].mock(options8)).toEqualTypeOf<ExpectedType10>();
-        expectTypeOf(routes["/short/[[...params]]"].get.mock(options8)).toEqualTypeOf<ExpectedType10>();
+        expectTypeOf(routes["/short/[...params]"].mock(options8)).toEqualTypeOf<Base<`/short/${string}`>>();
+        expectTypeOf(routes["/short/[...params]"].get.mock(options8)).toEqualTypeOf<Base<`/short/${string}`>>();
+        expectTypeOf(routes["/short/[[...params]]"].mock(options8)).toEqualTypeOf<Base<`/short/${string}`>>();
+        expectTypeOf(routes["/short/[[...params]]"].get.mock(options8)).toEqualTypeOf<Base<`/short/${string}`>>();
 
         const options9 = {
           params: { param: "value" },
           queries: { q: "query" },
           hash: "hash",
         };
-        type ExpectedType11 = `https://api.example.com/short/all/${string}?${string}#${string}`;
-        expectTypeOf(routes["/short/all/[param]"].mock(options9)).toEqualTypeOf<ExpectedType11>();
-        expectTypeOf(routes["/short/all/[param]"].get.mock(options9)).toEqualTypeOf<ExpectedType11>();
+        expectTypeOf(routes["/short/all/[param]"].mock(options9)).toEqualTypeOf<
+          Base<`/short/all/${string}?${string}#${string}`>
+        >();
+        expectTypeOf(routes["/short/all/[param]"].get.mock(options9)).toEqualTypeOf<
+          Base<`/short/all/${string}?${string}#${string}`>
+        >();
 
         const options10 = {
           params: { param: "value" },
           queries: { q: "query" },
           hash: "hash",
         } as const;
-        type ExpectedType12 = `https://api.example.com/short/all/value?${string}#hash`;
-        expectTypeOf(routes["/short/all/[param]"].mock(options10)).toEqualTypeOf<ExpectedType12>();
-        expectTypeOf(routes["/short/all/[param]"].get.mock(options10)).toEqualTypeOf<ExpectedType12>();
+        expectTypeOf(routes["/short/all/[param]"].mock(options10)).toEqualTypeOf<
+          Base<`/short/all/value?${string}#hash`>
+        >();
+        expectTypeOf(routes["/short/all/[param]"].get.mock(options10)).toEqualTypeOf<
+          Base<`/short/all/value?${string}#hash`>
+        >();
       });
     });
 
@@ -1452,34 +1462,38 @@ describe("routes", () => {
         expectTypeOf(routes["myapp://path"].mock()).toEqualTypeOf<ExpectedType1>();
         expectTypeOf(routes["myapp://path"].get.mock()).toEqualTypeOf<ExpectedType1>();
 
-        type ExpectedType2 = `myapp://path/*`;
+        type ExpectedType2 = `myapp://path/:param`;
         expectTypeOf(routes["myapp://path/[param]"].mock()).toEqualTypeOf<ExpectedType2>();
         expectTypeOf(routes["myapp://path/[param]"].get.mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["myapp://path/[...params]"].mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["myapp://path/[...params]"].get.mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["myapp://path/[[...params]]"].mock()).toEqualTypeOf<ExpectedType2>();
-        expectTypeOf(routes["myapp://path/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType2>();
+
+        type ExpectedType3 = `myapp://path/:params+`;
+        expectTypeOf(routes["myapp://path/[...params]"].mock()).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["myapp://path/[...params]"].get.mock()).toEqualTypeOf<ExpectedType3>();
+
+        type ExpectedType4 = `myapp://path/:params*`;
+        expectTypeOf(routes["myapp://path/[[...params]]"].mock()).toEqualTypeOf<ExpectedType4>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].get.mock()).toEqualTypeOf<ExpectedType4>();
 
         const options1 = { params: { param: "value" } };
-        type ExpectedType3 = `myapp://path/${string}`;
-        expectTypeOf(routes["myapp://path/[param]"].mock(options1)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["myapp://path/[param]"].get.mock(options1)).toEqualTypeOf<ExpectedType3>();
+        type ExpectedType5 = `myapp://path/${string}`;
+        expectTypeOf(routes["myapp://path/[param]"].mock(options1)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["myapp://path/[param]"].get.mock(options1)).toEqualTypeOf<ExpectedType5>();
 
         const options2 = { params: { params: ["value1", "value2"] } };
-        expectTypeOf(routes["myapp://path/[...params]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["myapp://path/[...params]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["myapp://path/[[...params]]"].mock(options2)).toEqualTypeOf<ExpectedType3>();
-        expectTypeOf(routes["myapp://path/[[...params]]"].get.mock(options2)).toEqualTypeOf<ExpectedType3>();
+        expectTypeOf(routes["myapp://path/[...params]"].mock(options2)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["myapp://path/[...params]"].get.mock(options2)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].mock(options2)).toEqualTypeOf<ExpectedType5>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].get.mock(options2)).toEqualTypeOf<ExpectedType5>();
 
         const options3 = { params: { param: "value" } } as const;
-        type ExpectedType4 = `myapp://path/value`;
-        expectTypeOf(routes["myapp://path/[param]"].mock(options3)).toEqualTypeOf<ExpectedType4>();
-        expectTypeOf(routes["myapp://path/[param]"].get.mock(options3)).toEqualTypeOf<ExpectedType4>();
+        type ExpectedType6 = `myapp://path/value`;
+        expectTypeOf(routes["myapp://path/[param]"].mock(options3)).toEqualTypeOf<ExpectedType6>();
+        expectTypeOf(routes["myapp://path/[param]"].get.mock(options3)).toEqualTypeOf<ExpectedType6>();
 
         const options4 = { params: { params: ["value1", "value2"] } } as const;
-        type ExpectedType5 = `myapp://path/value1/value2`;
-        expectTypeOf(routes["myapp://path/[...params]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
-        expectTypeOf(routes["myapp://path/[[...params]]"].mock(options4)).toEqualTypeOf<ExpectedType5>();
+        type ExpectedType7 = `myapp://path/value1/value2`;
+        expectTypeOf(routes["myapp://path/[...params]"].mock(options4)).toEqualTypeOf<ExpectedType7>();
+        expectTypeOf(routes["myapp://path/[[...params]]"].mock(options4)).toEqualTypeOf<ExpectedType7>();
       });
 
       it("2重スキーマが含まれる場合も戻り値が推論されること", () => {

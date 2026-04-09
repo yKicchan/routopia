@@ -520,6 +520,10 @@ postRoutes["/posts/[id]"].get({ params: { id: 123 } });
 When using mock servers such as MSW, you can use `routopia` as-is to build URLs for testing.  
 For flexible URL construction in tests, **a special `mock` method is provided that relaxes the type constraints of each defined parameter**.
 
+> [!CAUTION]
+> Do not use the `mock` method in production application code.  
+> It has special behavior for testing purposes, such as skipping URL encoding, which can cause security risks or bugs if used in production.
+
 - The `mock` method can be called directly under each endpoint and under each HTTP method definition.
 - The `mock` method directly under an endpoint inherits parameters from all HTTP method definitions.
 - The `mock` method under an HTTP method inherits only that HTTP method's parameters.
@@ -529,7 +533,9 @@ For flexible URL construction in tests, **a special `mock` method is provided th
   - [Query parameters accept values satisfying anything other than `object`](#query-parameters)
   - [Hash parameters accept values satisfying `string`](#hash)
 - All arguments of the `mock` method are optional.
-  - If path parameter specification is omitted, `*` is automatically set.
+  - If path parameters are omitted, they are replaced with colon syntax (e.g., `:id`) automatically.
+  - Required catch-all parameters use `:param+` and optional catch-all parameters use `:param*`.
+- The `mock` method does not URL-encode any parameters.
 
 ```ts
 import { routes, type } from 'routopia';
@@ -546,7 +552,7 @@ const myRoutes = routes({
 
 myRoutes["/path/[num]"].mock()
 myRoutes["/path/[num]"].get.mock()
-// => "/path/*"
+// => "/path/:num"
 
 myRoutes["/path/[num]"].mock({ params: { num: "abc" }, queries: { opt: "q" } })
 myRoutes["/path/[num]"].get.mock({ params: { num: "abc" }, queries: { opt: "q" } })

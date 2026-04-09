@@ -5,7 +5,7 @@ import type { Options } from "./types";
  *
  * @param path - The endpoint path, which can include path parameters. (e.g., "/users/[id]")
  * @param params - An object containing the values for the path parameters. (e.g., { id: "1" })
- * @param mocking - A boolean indicating whether to allow missing parameters for mocking purposes. If true, missing parameters will be replaced with "*".
+ * @param mocking - If true, missing parameters are replaced with colon syntax (e.g., ":id") instead of throwing an error, and the output will not be URL-encoded.
  *
  * @throws Error - Will throw an error if a required parameter is missing or if the parameter type is incorrect.
  * @returns The path with encoded path parameters replaced with actual values. (e.g., "/users/1")
@@ -22,25 +22,28 @@ export function replacePathParams(path: string, params: Options["params"], mocki
     .replace(/\/\[\[\.\.\.(.+?)]]/g, (_, key) => {
       // 1. /[[...slug]] - Optional Catch-all Parameters
       const values = params?.[key];
-      if (mocking && values === undefined) return "/*";
+      if (mocking && values === undefined) return `/:${key}*`;
       if (values === undefined) return "";
       if (!Array.isArray(values)) throw new Error(`"${key}" must be an array`);
+      if (mocking) return `/${values.join("/")}`;
       return `/${values.map(encodeURIComponent).join("/")}`;
     })
     .replace(/\[\.\.\.(.+?)]/g, (_, key) => {
       // 2. [...slug] - Catch-all Parameters
       const values = params?.[key];
-      if (mocking && values === undefined) return "*";
+      if (mocking && values === undefined) return `:${key}+`;
       if (values === undefined) throw new Error(`"${key}" is required`);
       if (!Array.isArray(values)) throw new Error(`"${key}" must be an array`);
+      if (mocking) return values.join("/");
       return values.map(encodeURIComponent).join("/");
     })
     .replace(/\[(.+?)]/g, (_, key) => {
       // 3. [slug] - Path Parameter
       const value = params?.[key];
-      if (mocking && value === undefined) return "*";
+      if (mocking && value === undefined) return `:${key}`;
       if (value === undefined) throw new Error(`"${key}" is required`);
       if (Array.isArray(value)) throw new Error(`"${key}" must not be an array`);
+      if (mocking) return String(value);
       return encodeURIComponent(String(value));
     });
 }
@@ -50,24 +53,45 @@ export function replacePathParams(path: string, params: Options["params"], mocki
  * Handles array values by repeating the key for each value.
  *
  * @param queries - An object of query parameters.
+ * @param mocking - If true, the query string will not be URL-encoded and will use a simple key=value format.
  * @returns A URL-encoded and sorted query string.
  *
  * @example
  * stringifyQueries({ z: "last", a: "first", n: "middle" });
- * // => "a=first&n=middle&z=last"
+ * // => "?a=first&n=middle&z=last"
  *
  * stringifyQueries({ search: ["apple", "banana"], page: 2 });
- * // => "page=2&search=apple&search=banana"
+ * // => "?page=2&search=apple&search=banana"
  */
-export function stringifyQueries(queries: Options["queries"]): string {
-  if (!queries) return "";
-  const searchParams = new URLSearchParams(
-    Object.entries(queries).flatMap(([key, values]) =>
-      Array.isArray(values) ? values.map((value) => [key, value]) : [[key, values]],
-    ),
-  );
-  searchParams.sort();
-  return searchParams.toString();
+export function stringifyQueries(queries: Options["queries"], mocking = false): string {
+  if (!queries || Object.keys(queries).length === 0) return "";
+
+  const entries = Object.entries(queries)
+    .flatMap(([key, values]) =>
+      Array.isArray(values) ? values.map((value) => [key, String(value)]) : [[key, String(values)]],
+    )
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (mocking) {
+    const queryString = entries.map(([key, value]) => `${key}=${value ?? ""}`).join("&");
+    return `?${queryString}`;
+  }
+
+  const searchParams = new URLSearchParams(entries).toString();
+  return `?${searchParams}`;
+}
+
+/**
+ * Converts a hash value into a string representation.
+ *
+ * @param hash - The hash value to be stringified.
+ * @param mocking - A flag indicating whether to mock the hash value.
+ * @return The stringified hash value.
+ */
+export function stringifyHash(hash: Options["hash"], mocking = false): string {
+  if (!hash) return "";
+  if (mocking) return `#${hash}`;
+  return `#${encodeURIComponent(String(hash))}`;
 }
 
 /**
