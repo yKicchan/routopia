@@ -77,7 +77,7 @@ export function stringifyQueries(queries: Options["queries"], mocking = false): 
     return `?${queryString}`;
   }
 
-  const searchParams = new URLSearchParams(entries).toString();
+  const searchParams = new URLSearchParams(entries).toString().replace(/\+/g, "%20");
   return `?${searchParams}`;
 }
 
