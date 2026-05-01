@@ -380,7 +380,7 @@ describe("routes", () => {
           string: "string with space",
         },
       };
-      const expectedUrl = "/queries/optional?string=string+with+space";
+      const expectedUrl = "/queries/optional?string=string%20with%20space";
 
       const url = routes["/queries/optional"].get(options);
 
