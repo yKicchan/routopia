@@ -1,5 +1,11 @@
 # routopia
 
+## 1.2.2
+
+### Patch Changes
+
+- [#14](https://github.com/yKicchan/routopia/pull/14) [`33950bc`](https://github.com/yKicchan/routopia/commit/33950bc0bc075785b35f9779055b6771fda797a5) Thanks [@yKicchan](https://github.com/yKicchan)! - Fixed an issue where spaces in query parameters were encoded as `+` instead of `%20` to comply with RFC 3986.
+
 ## 1.2.1
 
 ### Patch Changes
