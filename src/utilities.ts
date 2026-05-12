@@ -67,13 +67,19 @@ export function stringifyQueries(queries: Options["queries"], mocking = false): 
   if (!queries || Object.keys(queries).length === 0) return "";
 
   const entries = Object.entries(queries)
-    .flatMap(([key, values]) =>
-      Array.isArray(values) ? values.map((value) => [key, String(value)]) : [[key, String(values)]],
-    )
+    .flatMap(([key, value]) => {
+      if (value === null || value === undefined) return [];
+
+      if (Array.isArray(value)) return value.filter((v) => v !== null && v !== undefined).map((v) => [key, String(v)]);
+
+      return [[key, String(value)]];
+    })
     .sort(([a], [b]) => a.localeCompare(b));
 
+  if (entries.length === 0) return "";
+
   if (mocking) {
-    const queryString = entries.map(([key, value]) => `${key}=${value ?? ""}`).join("&");
+    const queryString = entries.map(([key, value]) => `${key}=${value}`).join("&");
     return `?${queryString}`;
   }
 
