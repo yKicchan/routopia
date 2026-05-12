@@ -1,3 +1,4 @@
+import { expect } from "vitest";
 import { isOptions, replacePathParams, stringifyHash, stringifyQueries } from "./utilities";
 
 describe("replacePathParams", () => {
@@ -245,7 +246,14 @@ describe("replacePathParams", () => {
 });
 
 describe("stringifyQueries", () => {
-  it.each([undefined, {}])("クエリパラメータがない場合は空文字を返すこと", (queries) => {
+  it.each([
+    undefined,
+    {},
+    { undefined: undefined },
+    { null: null },
+    { array: [] },
+    { undefined: undefined, null: null, array: [null, undefined] },
+  ])("クエリパラメータがない(%s の)場合は空文字を返すこと", (queries) => {
     const expectedQueryString = "";
 
     const result = stringifyQueries(queries);
@@ -258,8 +266,6 @@ describe("stringifyQueries", () => {
       [{ string: "string" }, "?string=string"],
       [{ number: 1 }, "?number=1"],
       [{ boolean: true }, "?boolean=true"],
-      [{ null: null }, "?null=null"],
-      [{ undefined: undefined }, "?undefined=undefined"],
       [{ bigint: BigInt(123) }, "?bigint=123"],
       [{ empty: "" }, "?empty="],
     ])("文字列化されたクエリが返ること", (queries, expected) => {
@@ -289,6 +295,15 @@ describe("stringifyQueries", () => {
     it("クエリパラメータの値が配列の場合、キーを繰り返して返すこと", () => {
       const queries = { array: ["1", "2", "3"] };
       const expectedQueryString = "?array=1&array=2&array=3";
+
+      const result = stringifyQueries(queries);
+
+      expect(result).toBe(expectedQueryString);
+    });
+
+    it("クエリパラメータの値が混在した配列の場合、null/undefinedを除外してキーを繰り返して返すこと", () => {
+      const queries = { array: ["a", null, "b", undefined, "c"] };
+      const expectedQueryString = "?array=a&array=b&array=c";
 
       const result = stringifyQueries(queries);
 
