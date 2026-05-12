@@ -1,5 +1,11 @@
 # routopia
 
+## 1.2.3
+
+### Patch Changes
+
+- [#16](https://github.com/yKicchan/routopia/pull/16) [`448dfb5`](https://github.com/yKicchan/routopia/commit/448dfb57499d800450883751071ddad8557ef3fc) Thanks [@yKicchan](https://github.com/yKicchan)! - Fixed an issue where `null`, `undefined`, or empty arrays in query parameters were incorrectly included in the generated query string. They are now properly excluded.
+
 ## 1.2.2
 
 ### Patch Changes
