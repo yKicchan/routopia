@@ -901,3 +901,132 @@ describe("routes: custom scheme", () => {
     });
   });
 });
+
+describe("routes: slashes", () => {
+  describe("baseUrl なし", () => {
+    const routes = schema.routes({
+      "/": schema.empty,
+      "/path/": schema.empty,
+      "/queries/": {
+        queries: {
+          q: schema.type as string | undefined,
+        },
+      },
+      "/[[...params]]": {
+        params: {
+          params: schema.type as string[],
+        },
+      },
+    });
+
+    it("末尾の / を取り除いた URL を生成できること", () => {
+      const expectedUrl = "/path";
+
+      const url = routes["/path/"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("クエリパラメータがあっても末尾の / を取り除いた URL を生成できること", () => {
+      const options = { queries: { q: "query" } };
+      const expectedUrl = `/queries${stringifyQueries(options.queries)}`;
+
+      const url = routes["/queries/"].get(options);
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("ルートは / のまま URL を生成できること", () => {
+      const expectedUrl = "/";
+
+      const url = routes["/"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("可変長でオプショナルなパラメータを省略してパスが空になる場合は / を生成すること", () => {
+      const expectedUrl = "/";
+
+      const url = routes["/[[...params]]"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("mock 関数も末尾の / を取り除いた URL を生成できること", () => {
+      expect(routes["/"].mock()).toBe("/");
+      expect(routes["/"].get.mock()).toBe("/");
+      expect(routes["/path/"].mock()).toBe("/path");
+      expect(routes["/path/"].get.mock()).toBe("/path");
+    });
+  });
+
+  describe("連続する /", () => {
+    const routes = schema.routes({
+      "/path//to": schema.empty,
+      "/path/[param]/to": {
+        params: {
+          param: schema.type as string,
+        },
+      },
+    });
+
+    it("エンドポイントの連続する / をまとめた URL を生成できること", () => {
+      const expectedUrl = "/path/to";
+
+      const url = routes["/path//to"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("空のパスパラメータで生じる連続する / をまとめた URL を生成できること", () => {
+      const expectedUrl = "/path/to";
+
+      const url = routes["/path/[param]/to"].get({ params: { param: "" } });
+
+      expect(url).toBe(expectedUrl);
+    });
+  });
+
+  describe("baseUrl あり", () => {
+    const baseUrl = "https://example.com/base";
+    const routes = schema.routes(baseUrl, {
+      "/": schema.empty,
+      "/path/": schema.empty,
+      "/queries/": {
+        queries: {
+          q: schema.type as string | undefined,
+        },
+      },
+    });
+
+    it("ルートは baseUrl そのままの URL を生成できること", () => {
+      const expectedUrl = baseUrl;
+
+      const url = routes["/"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("末尾の / を取り除いた URL を生成できること", () => {
+      const expectedUrl = `${baseUrl}/path`;
+
+      const url = routes["/path/"].get();
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("クエリパラメータがあっても末尾の / を取り除いた URL を生成できること", () => {
+      const options = { queries: { q: "query" } };
+      const expectedUrl = `${baseUrl}/queries${stringifyQueries(options.queries)}`;
+
+      const url = routes["/queries/"].get(options);
+
+      expect(url).toBe(expectedUrl);
+    });
+
+    it("mock 関数もルートは baseUrl そのままの URL を生成できること", () => {
+      expect(routes["/"].mock()).toBe(baseUrl);
+      expect(routes["/"].get.mock()).toBe(baseUrl);
+    });
+  });
+});

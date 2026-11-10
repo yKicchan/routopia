@@ -49,6 +49,47 @@ export function replacePathParams(path: string, params: Options["params"], mocki
 }
 
 /**
+ * Collapses repeated slashes and removes a trailing slash from the path, but preserves `://` separators.
+ *
+ * @param path - The path to trim. (e.g., "/users//1/")
+ * @returns The trimmed path. (e.g., "/users/1")
+ *
+ * @example
+ * trimPath("/users//1/");
+ * // => "/users/1"
+ *
+ * trimPath("/");
+ * // => ""
+ *
+ * trimPath("myapp://path/");
+ * // => "myapp://path"
+ */
+export function trimPath(path: string): string {
+  return path
+    .split("://")
+    .map((segment) => segment.replace(/\/{2,}/g, "/").replace(/\/$/, ""))
+    .join("://");
+}
+
+/**
+ * Prepends the base URL to the path, falling back to "/" when both are empty.
+ *
+ * @param baseUrl - The base URL to prepend. (e.g., "https://example.com")
+ * @param path - The path to append. (e.g., "/users")
+ * @returns The joined URL. (e.g., "https://example.com/users")
+ *
+ * @example
+ * joinBaseUrl("https://example.com", "");
+ * // => "https://example.com"
+ *
+ * joinBaseUrl("", "");
+ * // => "/"
+ */
+export function joinBaseUrl(baseUrl: string, path: string): string {
+  return `${baseUrl}${path}` || "/";
+}
+
+/**
  * Converts an object of query parameters into a URL-encoded query string.
  * Handles array values by repeating the key for each value.
  *

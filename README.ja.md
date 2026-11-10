@@ -321,15 +321,20 @@ myRoutes["/path"].get();
 - `routes` 関数には第1引数に文字列を渡すことで Base URL を指定可能
 - その場合スキーマ定義は第2引数に指定する
 - なお、Base URL は単純に文字列結合される
+- エンドポイント末尾の `/` は取り除かれるため、`"/"` は Base URL そのものになる
 
 ```ts
 import { routes, empty } from 'routopia';
 
 const myUsersRoutes = routes("/users", {
+  "/": empty,
   "/path": {
     get: empty,
   },
 });
+
+myUsersRoutes["/"].get();
+// => "/users"
 
 myUsersRoutes["/path"].get();
 // => "/users/path"
