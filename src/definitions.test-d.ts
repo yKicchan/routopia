@@ -1510,3 +1510,76 @@ describe("routes", () => {
     });
   });
 });
+
+describe("routes: slashes", () => {
+  describe("baseUrl なし", () => {
+    const routes = schema.routes({
+      "/": schema.empty,
+      "/path/": schema.empty,
+      "/queries/": {
+        queries: {
+          q: schema.type as string,
+        },
+      },
+      "/[[...params]]": {
+        params: {
+          params: schema.type as string[],
+        },
+      },
+    });
+
+    it("戻り値の型から末尾の / が取り除かれること", () => {
+      expectTypeOf(routes["/path/"].get()).toEqualTypeOf<"/path">();
+      expectTypeOf(routes["/queries/"].get({ queries: { q: "query" } })).toEqualTypeOf<`/queries?${string}`>();
+    });
+
+    it("ルートの戻り値の型は / のままであること", () => {
+      expectTypeOf(routes["/"].get()).toEqualTypeOf<"/">();
+      expectTypeOf(routes["/[[...params]]"].get()).toEqualTypeOf<"/">();
+    });
+
+    it("mock 関数も戻り値の型から末尾の / が取り除かれること", () => {
+      expectTypeOf(routes["/"].mock()).toEqualTypeOf<"/">();
+      expectTypeOf(routes["/path/"].mock()).toEqualTypeOf<"/path">();
+      expectTypeOf(routes["/path/"].get.mock()).toEqualTypeOf<"/path">();
+    });
+  });
+
+  describe("連続する /", () => {
+    const routes = schema.routes({
+      "/path//to": schema.empty,
+      "/path/[param]/to": {
+        params: {
+          param: schema.type as string,
+        },
+      },
+    });
+
+    it("戻り値の型で連続する / がまとめられること", () => {
+      expectTypeOf(routes["/path//to"].get()).toEqualTypeOf<"/path/to">();
+      expectTypeOf(routes["/path/[param]/to"].get({ params: { param: "" } } as const)).toEqualTypeOf<"/path/to">();
+    });
+  });
+
+  describe("baseUrl あり", () => {
+    const routes = schema.routes("https://example.com/base", {
+      "/": schema.empty,
+      "/queries/": {
+        queries: {
+          q: schema.type as string,
+        },
+      },
+    });
+
+    it("ルートの戻り値の型は baseUrl そのままであること", () => {
+      expectTypeOf(routes["/"].get()).toEqualTypeOf<"https://example.com/base">();
+      expectTypeOf(routes["/"].mock()).toEqualTypeOf<"https://example.com/base">();
+    });
+
+    it("クエリパラメータがあっても戻り値の型から末尾の / が取り除かれること", () => {
+      expectTypeOf(
+        routes["/queries/"].get({ queries: { q: "query" } }),
+      ).toEqualTypeOf<`https://example.com/base/queries?${string}`>();
+    });
+  });
+});

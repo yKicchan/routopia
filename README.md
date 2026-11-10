@@ -324,15 +324,20 @@ myRoutes["/path"].get();
 - The routes function can accept a string as the first argument to specify a Base URL.
 - In that case, specify the schema definition as the second argument.
 - Note that the Base URL is simply prefixed.
+- A trailing slash on the endpoint is removed, so `"/"` resolves to the Base URL itself.
 
 ```ts
 import { routes, empty } from 'routopia';
 
 const myUsersRoutes = routes("/users", {
+  "/": empty,
   "/path": {
     get: empty,
   },
 });
+
+myUsersRoutes["/"].get();
+// => "/users"
 
 myUsersRoutes["/path"].get();
 // => "/users/path"

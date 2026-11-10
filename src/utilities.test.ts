@@ -1,5 +1,5 @@
 import { expect } from "vitest";
-import { isOptions, replacePathParams, stringifyHash, stringifyQueries } from "./utilities";
+import { isOptions, joinBaseUrl, replacePathParams, stringifyHash, stringifyQueries, trimPath } from "./utilities";
 
 describe("replacePathParams", () => {
   it("パスパラメータがない場合は元のパスを返すこと", () => {
@@ -376,5 +376,45 @@ describe("isOptions", () => {
     expect(isOptions("post")).toBe(false);
     expect(isOptions("put")).toBe(false);
     expect(isOptions("delete")).toBe(false);
+  });
+});
+
+describe("trimPath", () => {
+  it.each([
+    ["/path/", "/path"],
+    ["/", ""],
+    ["/path//to///resource", "/path/to/resource"],
+    ["schema://path//to/", "schema://path/to"],
+  ])("連続する / をまとめ、末尾の / を取り除くこと(%s → %s)", (path, expectedPath) => {
+    const result = trimPath(path);
+
+    expect(result).toBe(expectedPath);
+  });
+
+  it.each(["/path", "", "schema://", "schema://https://example.com/path"])(
+    "整える必要がない場合はそのまま返すこと(%s)",
+    (path) => {
+      const result = trimPath(path);
+
+      expect(result).toBe(path);
+    },
+  );
+});
+
+describe("joinBaseUrl", () => {
+  it.each([
+    ["https://example.com", "/path", "https://example.com/path"],
+    ["https://example.com", "", "https://example.com"],
+    ["", "/path", "/path"],
+  ])("baseUrl とパスを連結すること(%s + %s)", (baseUrl, path, expectedUrl) => {
+    const result = joinBaseUrl(baseUrl, path);
+
+    expect(result).toBe(expectedUrl);
+  });
+
+  it("baseUrl とパスがどちらも空の場合は / を返すこと", () => {
+    const result = joinBaseUrl("", "");
+
+    expect(result).toBe("/");
   });
 });

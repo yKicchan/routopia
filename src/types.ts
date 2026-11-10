@@ -392,8 +392,11 @@ type ReplacePathParams<
  * ApplyParams<"/users/[userId]", { userId: 123 }>
  * // "/users/123"
  *
+ * ApplyParams<"/users/">
+ * // "/users"
+ *
  * ApplyParams<"/">
- * // "/"
+ * // ""
  *
  * ApplyParams<"/path/[param]", {}, true>
  * // "/path/:param"
@@ -409,6 +412,23 @@ type ApplyParams<
       ? ReplacePathParams<Path, Params, Mocking>
       : never
 >;
+
+/**
+ * Prepends the base URL to the path, falling back to "/" when both are empty
+ * - Distributes over `Path` so that `never` (e.g., missing required parameters) stays `never` instead of becoming "/".
+ *
+ * @example
+ * JoinBaseUrl<"https://example.com", "">
+ * // "https://example.com"
+ *
+ * JoinBaseUrl<"", "">
+ * // "/"
+ */
+type JoinBaseUrl<BaseUrl extends string, Path extends string> = Path extends string
+  ? `${BaseUrl}${Path}` extends ""
+    ? "/"
+    : `${BaseUrl}${Path}`
+  : never;
 
 /**
  * Applies query parameters if they exist
@@ -445,32 +465,37 @@ type ApplyHash<Path extends string, Hash extends Nullable<string>> = Hash extend
  * Combines path, queries, and hash into a fully typed URL string
  *
  * @example
- * ExtractPath<"/users/[userId]", { userId: 123 }, { search: string }>
- * // `/users/123?${string}`
+ * ExpectedPath<"https://example.com", "/users/[userId]", { userId: 123 }, { search: string }>
+ * // `https://example.com/users/123?${string}`
  */
 type ExpectedPath<
+  BaseUrl extends string,
   Path extends string,
   Params extends Nullable<Optional<ExtractParams<Path, Mocking>>> = undefined,
   Queries extends Nullable<SchemaQueries> = undefined,
   Hash extends Nullable<string> = undefined,
   Mocking = false,
-> = ApplyHash<ApplyQueries<ApplyParams<Path, Params, Mocking>, Queries>, Hash>;
+> = ApplyHash<ApplyQueries<JoinBaseUrl<BaseUrl, ApplyParams<Path, Params, Mocking>>, Queries>, Hash>;
 
 /**
  * Combines endpoint and schema definition to generate a concrete return type
  * Refine type according to the presence or absence of path and query parameters in the schema definition
  *
  * @example
- * ActualReturn<"/path/[param]", { params: { param: string }, queries: { q: string } }>
+ * ActualReturn<"", "/path/[param]", { params: { param: string }, queries: { q: string } }>
  * // `/path/${string}?${string}`
  *
- * ActualReturn<"/path/[param1]/to/[param2]", { params: { param1: string; param2: number } }>
+ * ActualReturn<"", "/path/[param1]/to/[param2]", { params: { param1: string; param2: number } }>
  * // `/path/${string}/to/${number}`
  *
- * ActualReturn<"/path", { queries: { q: string } }>
+ * ActualReturn<"", "/path", { queries: { q: string } }>
  * // `/path?${string}`
+ *
+ * ActualReturn<"https://example.com", "/", { queries: { q: string } }>
+ * // `https://example.com?${string}`
  */
-type ActualReturn<Endpoint extends string, Options, Mocking = false> = ExpectedPath<
+type ActualReturn<BaseUrl extends string, Endpoint extends string, Options, Mocking = false> = ExpectedPath<
+  BaseUrl,
   Endpoint,
   Options extends { params: infer Params extends Nullable<Optional<ExtractParams<Endpoint, Mocking>>> }
     ? Params
@@ -506,15 +531,15 @@ type Simplify<T> = { [K in keyof T]: T[K] } & {};
  * - Accepts parameters depending on whether required fields exist
  */
 type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = OptionsSchema extends Empty
-  ? () => `${BaseUrl}${Endpoint}`
+  ? () => ActualReturn<BaseUrl, Endpoint, undefined>
   : OptionsSchema extends Options
     ? HasRequired<ActualOptions<OptionsSchema, Endpoint>> extends true
       ? <Options extends Simplify<ActualOptions<OptionsSchema, Endpoint>>>(
           options: Simplify<Options>,
-        ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
+        ) => ActualReturn<BaseUrl, Endpoint, Options>
       : <Options extends Simplify<ActualOptions<OptionsSchema, Endpoint>>>(
           options?: Simplify<Options>,
-        ) => `${BaseUrl}${ActualReturn<Endpoint, Options>}`
+        ) => ActualReturn<BaseUrl, Endpoint, Options>
     : never;
 
 /**
@@ -523,11 +548,11 @@ type Method<BaseUrl extends string, Endpoint extends string, OptionsSchema> = Op
  * - If the schema definition has parameters, it allows all parameters to be optional and accepts any value, while still returning a correctly typed URL string.
  */
 type MockMethod<BaseUrl extends string, Endpoint extends string, OptionsSchema> = OptionsSchema extends Empty
-  ? () => `${BaseUrl}${Endpoint}`
+  ? () => ActualReturn<BaseUrl, Endpoint, undefined, true>
   : OptionsSchema extends Options
     ? <Options extends Simplify<ActualOptions<OptionsSchema, Endpoint, true>>>(
         options?: Simplify<Options>,
-      ) => `${BaseUrl}${ActualReturn<Endpoint, Options, true>}`
+      ) => ActualReturn<BaseUrl, Endpoint, Options, true>
     : never;
 
 /**
